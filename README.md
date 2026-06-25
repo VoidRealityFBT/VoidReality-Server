@@ -28,22 +28,24 @@ Where the base server picks a default that is safe on average, VoidReality measu
 
 A map of the parts that matter, so the behavior is not a black box. Each part notes what the base server does and, where VoidReality changes it, what it does instead and why.
 
-The skeleton. Body pose is forward kinematics over a bone tree. Each tracker supplies the orientation of the bone it is strapped to, and the pose is built by walking the tree from a root and rotating each bone by its tracker's rotation. The tree is positionally anchored at the head, which is pinned to the headset, so the whole body hangs from the head and every other bone is placed relative to it. Bone lengths come from your proportions, set by hand or by AutoBone. This is why a missing tracker has to be estimated rather than left blank. It is also why head movement could move the body: in the base server the head and neck rotate by the headset's full rotation, so turning your head swept the body sideways. VoidReality takes the body's yaw from the spine when a spine tracker is present, while the head keeps its own pitch and roll, so looking around no longer drags the body, and the head pose sent to SteamVR is left unchanged.
+**The skeleton**:\
+Body pose is forward kinematics over a bone tree. Each tracker supplies the orientation of the bone it is strapped to, and the pose is built by walking the tree from a root and rotating each bone by its tracker's rotation. The tree is positionally anchored at the head, which is pinned to the headset, so the whole body hangs from the head and every other bone is placed relative to it. Bone lengths come from your proportions, set by hand or by AutoBone. This is why a missing tracker has to be estimated rather than left blank. It is also why head movement could move the body: in the base server the head and neck rotate by the headset's full rotation, so turning your head swept the body sideways. VoidReality takes the body's yaw from the spine when a spine tracker is present, while the head keeps its own pitch and roll, so looking around no longer drags the body, and the head pose sent to SteamVR is left unchanged.
 
-The yaw reset. A reset takes a reference rotation, the headset's heading, and rotates each tracker's frame so its current heading registers as facing the same way. Internally a tracker holds a mounting rotation and a reset offset, and the reset solves for the offset that lines the tracker's measured heading up with the reference. Yaw, pitch, and roll are reset separately. The yaw component is pulled out of the tracker quaternion as the Y term of its YZX Euler decomposition; this is the stock extraction the build returned to after an experiment with a swing twist formulation oscillated and was reverted.
+**The yaw reset**:\
+A reset takes a reference rotation, the headset's heading, and rotates each tracker's frame so its current heading registers as facing the same way. Internally a tracker holds a mounting rotation and a reset offset, and the reset solves for the offset that lines the tracker's measured heading up with the reference. Yaw, pitch, and roll are reset separately. The yaw component is pulled out of the tracker quaternion as the Y term of its YZX Euler decomposition; this is the stock extraction the build returned to after an experiment with a swing twist formulation oscillated and was reverted.
 
 Yaw is degenerate when a limb is horizontal. Heading about the vertical axis is only well defined when the bone has a meaningful horizontal direction. A thigh or a spine held flat, as when you lie down, has almost no horizontal projection, so its computed yaw is numerically unstable and can flip. Several of the lying down behaviors here exist because of this single fact, not because of separate bugs.
 
-**Stay Aligned**:
+**Stay Aligned**:\
 This is the continuous yaw correction that runs between resets. It has two forces. A centering force gently pulls a tracker toward the heading it would have in a recognized relaxed pose: standing, sitting in a chair, or sitting on the ground. A locked force holds a tracker that has gone still at the last good heading it settled to, and that is what actually fights slow drift while you are not moving. The base server applies one fixed correction gain to every tracker and runs centering all the time. VoidReality changes this in three ways, each for the same reason: a fixed rule that is right on average is wrong for the tracker that is actually misbehaving. The correction authority is scaled by each tracker's measured drift, so a drifty tracker is pulled harder while a stable one is barely touched instead of both getting the same nudge. The ceiling on that authority was raised so a hot, fast drifting tracker can still be caught rather than being corrected too gently to keep up. And the centering force is paused whenever the detected pose is not upright, so it cannot drag horizontal legs into a crossed shape, while the locked force keeps running so a resting tracker is still pinned. Better, concretely: drifty trackers hold alignment longer and good ones are left alone, and lying down no longer scrambles the legs.
 
-**The rotation filter**:
+**The rotation filter**:\
 Between the raw tracker stream, which arrives at up to a few hundred packets a second, and the pose sits a per tracker filter that runs framerate independent off a timer. It has three modes. None passes rotations straight through, only tracking the long way around past 180 degrees. The base server's smoothing eases toward the latest rotation by a fixed amount, which forces a single tradeoff between lag on fast motion and jitter at rest. VoidReality makes the smoothing adaptive on two axes. It eases as the tracker turns faster, by adding a term proportional to angular speed, so quick motion stays sharp while slow and resting motion is smoothed hard to hide jitter, instead of one compromise setting for both. And it tracks the live gap between packets and, when that gap grows because of packet loss, smooths more so a flaky link reads as calm motion rather than stutter, with a floor so the body never freezes; at a healthy packet rate this term does nothing, so it only ever helps on a bad link. Prediction extrapolates forward along a smoothed angular velocity by a small lookahead, clamped so a low packet rate cannot fling a limb, and it uses the firmware's own measured gyro velocity when that optional packet is present and recent rather than the noisier estimate derived from quaternion differences. Better, concretely: fast motion lags less, a lossy link looks smooth instead of choppy, and none of it costs anything when the link is healthy.
 
-**Fallback and handoff**:
+**Fallback and handoff**:\
 A body part is driven by its tracker whenever that tracker is connected and sending data. If the tracker stops sending, the part is kept alive and driven by an estimate built from neighboring trackers, and the interface marks it as in fallback, so a tracker that dies mid session is replaced rather than the limb vanishing. The difference from the base server is the trigger. The base also handed a part off to the estimate once its tracker had drifted past an angle threshold, on the theory that a far drifted tracker is wrong; in practice that snapped a perfectly live limb into a default pose whenever a tracker ran hot or was held horizontal, which is the common case lying down. VoidReality keys handoff only on whether data is flowing, so a drifted but live tracker keeps tracking, drifted but real, and you fix it with a reset like normal. Better, concretely: limbs stop jumping into a standing pose while you are lying down or while a tracker is just warm.
 
-**Drift measurement and learning**:
+**Drift measurement and learning**:\
 At each reset the server records, per tracker, how far the heading had wandered since the previous reset and how long that took, and the ratio is a drift rate in degrees per minute. This is measured on the raw sensor heading before correction, so it describes the hardware, and the displayed number feeds the drift column, the chart, the session summary, and the reset reminder. Only an interval in a sensible window counts: too short and the measurement is mostly noise, too long and a fast tracker can drift more than 180 degrees of yaw, which wraps to the shortest angle and reads falsely low, so a very long gap between resets is skipped rather than learned from. The base server would simply overwrite this number each reset and forget it on restart. VoidReality treats it as something to learn from, in three steps that build on each other.
 
 First, the rate is not overwritten but blended into a running estimate, so one noisy interval moves it only a little and Stay Aligned's correction strength stops lurching reset to reset. Second, a sample that jumps far above the established estimate is treated, the first time, as a physical slip, the tracker moving on the limb or being repositioned rather than drifting, and is dropped so a "one-off bump" does not poison the estimate. But a slip is a "one-off", while a tracker that genuinely drifts fast, such as one running hot, produces big samples again and again; so if the big samples keep coming, after a couple in a row the estimate is allowed to climb to the truth instead of every high sample being rejected forever. That is the difference between dropping a slip and letting a hot tracker report and be corrected for its real drift. Third, each kept sample is filed against the IMU temperature it was measured at, building a small per tracker map of drift rate versus temperature; Stay Aligned then asks that map what the drift rate is at the tracker's current temperature and scales its correction to match. Because gyro bias, the source of drift, shifts as the chip warms, this lets a warming tracker be corrected for its learned warm up drift continuously, instead of the correction only updating at the next reset. When the map has nothing learned for a temperature yet it falls back to the blended measured rate, so it is never worse than the measured value and at worst equal to it. The diagnostics page shows a stability readout, the spread of recent measurements, so you can see the estimate settle.
@@ -98,7 +100,7 @@ Floor plant and foot handling were smoothed so lifting a planted foot eases off 
 Body yaw is taken from the spine when a spine tracker is present, while the head keeps its own pitch and roll, so turning your head no longer drags the body. The head pose sent to SteamVR is unchanged.
 
 **Simulated toes**:\
-When sending a full skeleton over VMC, simulated toe bones are produced from the foot angle so avatars with toe bones get a little articulation./
+When sending a full skeleton over VMC, simulated toe bones are produced from the foot angle so avatars with toe bones get a little articulation.\
 (Why did I add this.)
 
 
@@ -115,21 +117,27 @@ The base server handed a body part to its fallback estimate once its tracker had
 **Lying down centering crossed the legs**:\
 Stay Aligned's centering treated a horizontal leg's undefined heading as real and pulled it toward an upright pose, twisting resting legs into crossed shapes. Centering is now paused whenever the pose is not clearly upright.
 
-
-
 ## Building and running
 
-Use the provided build scripts!/
-`build.ps1 server` builds the server jar/
-`build.ps1 gui` builds the graphical user interface/
-`build.ps1 app` builds both/
-`build.ps1 all` builds those plus the firmware./
-The Kotlin server needs a JDK 17 or newer, since it cannot build on Java 8; the script finds one automatically./
+> [!caution]
+> Fixing bug before publishing a stable release.\
+> Currently VoidReality-server is being tested by peers.
+
+> You can use this by executing `./run` in powershell
+
+**Use the provided build scripts!**
+```
+`build.ps1 server` // builds the server jar
+`build.ps1 gui`    // builds the graphical user interface
+`build.ps1 app`    // builds both
+`build.ps1 all`    // builds those plus the firmware.
+```
+The Kotlin server needs a JDK 17 or newer, since it cannot build on Java 8; the script finds one automatically.\
 The interface needs Node with pnpm 10.33.
 
 `build.ps1 dist` builds the distributable executable for distribution: the jar, the native SteamVR bridge under `bindings-provider`, and the interface, packaged with electron-builder into a downloadable app and copied into `Release`. That needs CMake, the Visual Studio C++ build tools, and the OpenVR SDK populated at `bindings-provider\openvr` (an empty submodule in a fresh tree, so `git clone https://github.com/ValveSoftware/openvr bindings-provider\openvr` once first).
 
-`run.ps1` reinstalls dependencies if needed, recompiles and rebuilds the jar, restarts the server onto the fresh build, and opens the interface in development mode, so it always runs the latest code and works straight from a freshly cleaned tree./
+`run.ps1` reinstalls dependencies if needed, recompiles and rebuilds the jar, restarts the server onto the fresh build, and opens the interface in development mode, so it always runs the latest code and works straight from a freshly cleaned tree.\
 `clean.ps1` does the deep clean (removes `node_modules`, the gradle cache, all build output, and the `Release` folders) to get the tree small for a GitHub upload.
 
 ## Disclaimer
