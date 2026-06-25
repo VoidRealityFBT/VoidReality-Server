@@ -31,6 +31,9 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 
+// Maximum simulated toe flex angle in radians, about 57 degrees at full toe off (Why did I decide to add this?)
+private const val MAX_TOE_FLEX_RAD = 1.0f
+
 /**
  * VMC documentation: https://protocol.vmc.info/english
  *
@@ -411,6 +414,8 @@ class VMCHandler(
 							oscBundle.addPacket(OSCMessage("/VMC/Ext/Bone/Pos", oscArgs.clone()))
 						}
 					}
+
+					sendSimulatedToes(oscBundle)
 				}
 
 				for (tracker in computedTrackers) {
@@ -488,6 +493,30 @@ class VMCHandler(
 	 */
 	fun addComputedTracker(computedTracker: Tracker) {
 		computedTrackers.add(computedTracker)
+	}
+
+	// Simulated toe articulation derived from how far each foot is pitched toe down.
+	// VMC consumers that have toe bones get believable toe flex with no toe sensor.
+	private fun sendSimulatedToes(oscBundle: OSCBundle) {
+		if (!humanPoseManager.skeleton.hasKneeTrackers) return
+		sendToeBone(BoneType.LEFT_FOOT, UnityBone.LEFT_TOES, oscBundle)
+		sendToeBone(BoneType.RIGHT_FOOT, UnityBone.RIGHT_TOES, oscBundle)
+	}
+
+	private fun sendToeBone(footBoneType: BoneType, toeBone: UnityBone, oscBundle: OSCBundle) {
+		val footBone = humanPoseManager.getBone(footBoneType)
+		// Direction from the ankle to the toe base, in world space
+		val diff = footBone.getTailPosition() - footBone.getPosition()
+		val len = diff.len()
+		// A foot pointing further down means the heel is lifted, so the toes bend up to
+		// stay flat on the ground. Flat feet give no flex.
+		val toeDown = if (len > 0f) (-diff.y / len).coerceIn(0f, 1f) else 0f
+		val localRot = Quaternion.fromRotationVector(toeDown * MAX_TOE_FLEX_RAD, 0f, 0f)
+
+		oscArgs.clear()
+		oscArgs.add(toeBone.stringVal)
+		addTransformToArgs(NULL, localRot)
+		oscBundle.addPacket(OSCMessage("/VMC/Ext/Bone/Pos", oscArgs.clone()))
 	}
 
 	private fun addTransformToArgs(pos: Vector3, rot: Quaternion) {

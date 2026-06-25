@@ -54,6 +54,15 @@ class VRConfig {
 
 	val knownDevices: MutableSet<String> = mutableSetOf()
 
+	// Last board type (by id) each device reported, keyed by MAC. Lets us keep matching the
+	// right firmware to a tracker even if it later boots firmware that does not report a board.
+	val deviceBoardTypes: MutableMap<String, Int> = mutableMapOf()
+
+	// Learned drift-rate-versus-temperature curve per tracker, keyed by MAC, as a map of bin
+	// center temperature (C) to drift rate (deg/min). Persisting it lets a known tracker start
+	// a session already knowing its warm-up drift so it needs fewer early resets.
+	val deviceDriftModels: MutableMap<String, MutableMap<String, Float>> = mutableMapOf()
+
 	val overlay: OverlayConfig = OverlayConfig()
 
 	val trackingChecklist: TrackingChecklistConfig = TrackingChecklistConfig()
@@ -145,4 +154,23 @@ class VRConfig {
 	fun addKnownDevice(mac: String): Boolean = knownDevices.add(mac)
 
 	fun forgetKnownDevice(mac: String): Boolean = knownDevices.remove(mac)
+
+	fun getRememberedBoardType(mac: String?): Int? = if (mac == null) null else deviceBoardTypes[mac]
+
+	// Returns true when the stored value actually changed, so the caller only saves when needed
+	fun rememberBoardType(mac: String, boardId: Int): Boolean {
+		if (deviceBoardTypes[mac] == boardId) return false
+		deviceBoardTypes[mac] = boardId
+		return true
+	}
+
+	fun getDriftModel(mac: String?): Map<String, Float>? =
+		if (mac == null) null else deviceDriftModels[mac]
+
+	// Returns true when the stored model actually changed, so the caller only saves when needed
+	fun rememberDriftModel(mac: String, bins: Map<String, Float>): Boolean {
+		if (bins.isEmpty() || deviceDriftModels[mac] == bins) return false
+		deviceDriftModels[mac] = bins.toMutableMap()
+		return true
+	}
 }

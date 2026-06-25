@@ -20,14 +20,20 @@ pluginManagement {
 	val spotlessVersion: String by settings
 	val shadowJarVersion: String by settings
 	val buildconfigVersion: String by settings
+	val grgitVersion: String by settings
 	plugins {
 		kotlin("plugin.serialization") version kotlinVersion
 		kotlin("jvm") version kotlinVersion
-		kotlin("android") version kotlinVersion
 		id("com.diffplug.spotless") version spotlessVersion
 		id("com.gradleup.shadow") version shadowJarVersion
 		id("com.github.gmazzo.buildconfig") version buildconfigVersion
+		id("org.ajoberstar.grgit") version grgitVersion
 	}
+}
+
+// lets gradle download the JDK 17 toolchain when it is not installed
+plugins {
+	id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
 include(":solarxr-protocol")
@@ -37,4 +43,3 @@ include(":server")
 project(":server").projectDir = File("server")
 include(":server:core")
 include(":server:desktop")
-include(":server:android")

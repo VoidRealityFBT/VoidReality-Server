@@ -1,14 +1,24 @@
 import classNames from 'classnames';
 import { IPv4 } from 'ip-num';
-import { createContext, ReactNode, useContext, useMemo } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
+import { useLocalization } from '@fluent/react';
 import { useConfig } from '@/hooks/config';
 import { useTracker } from '@/hooks/tracker';
 import { BodyPartIcon } from '@/components/commons/BodyPartIcon';
 import { Typography } from '@/components/commons/Typography';
+import { Button } from '@/components/commons/Button';
 import { formatVector3 } from '@/utils/formatting';
 import { TrackerBattery } from './TrackerBattery';
 import { TrackerStatus } from './TrackerStatus';
 import { TrackerWifi } from './TrackerWifi';
+import { DriftChart } from './DriftChart';
+import { DriftTrendArrow } from './DriftTrendArrow';
 import { FlatDeviceTracker } from '@/store/app-store';
 import { StayAlignedInfo } from '@/components/stay-aligned/StayAlignedInfo';
 import { Tooltip } from '@/components/commons/Tooltip';
@@ -16,6 +26,7 @@ import { WarningIcon } from '@/components/commons/icon/WarningIcon';
 import { FirmwareIcon } from '@/components/commons/FirmwareIcon';
 import {
   BodyPart,
+  DeviceDataT,
   TrackerDataT,
   TrackerStatus as TrackerStatusEnum,
   TrackingChecklistStepT,
@@ -38,9 +49,11 @@ const getTrackerName = ({ tracker }: FlatDeviceTracker) =>
 
 export function TrackerNameCell({
   tracker,
+  device,
   warning,
 }: {
   tracker: TrackerDataT;
+  device?: DeviceDataT;
   warning: TrackingChecklistStepT | boolean;
 }) {
   const { useName } = useTracker(tracker);
@@ -71,7 +84,11 @@ export function TrackerNameCell({
         <Typography bold whitespace="whitespace-nowrap">
           {name}
         </Typography>
-        <TrackerStatus status={tracker.status} />
+        <TrackerStatus
+          status={tracker.status}
+          tracker={tracker}
+          device={device}
+        />
       </div>
     </div>
   );
@@ -171,11 +188,15 @@ function Row({
   highlightedTrackers,
   clickedTracker,
   gridTemplateColumns,
+  expanded,
+  onToggle,
 }: {
   data: FlatDeviceTracker;
   highlightedTrackers: highlightedTrackers | undefined;
   clickedTracker: (tracker: TrackerDataT) => void;
   gridTemplateColumns: string;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
   const { config } = useConfig();
   const fontColor = config?.devSettings?.highContrast ? 'primary' : 'secondary';
@@ -212,12 +233,16 @@ function Row({
       >
         <>
           <div
-            className="group grid items-center"
+            className="group grid items-center cursor-pointer"
             style={{ gridTemplateColumns }}
-            onClick={() => clickedTracker(tracker)}
+            onClick={onToggle}
           >
             <Cell first>
-              <TrackerNameCell tracker={tracker} warning={warning} />
+              <TrackerNameCell
+                tracker={tracker}
+                device={device}
+                warning={warning}
+              />
             </Cell>
             <Cell>
               <Typography color={fontColor}>
@@ -265,12 +290,33 @@ function Row({
                 color={fontColor}
               />
             </Cell>
-            <Cell last={!moreInfo}>
+            <Cell>
               {tracker?.temp && tracker?.temp?.temp != 0 && (
                 <Typography color={fontColor} whitespace="whitespace-nowrap">
                   {tracker.temp.temp.toFixed(2)}
                 </Typography>
               )}
+            </Cell>
+            <Cell>
+              {tracker.info?.driftRate != null && tracker.info.driftRate !== 0 && (
+                <div className="flex items-center gap-1">
+                  <Typography
+                    color={classNames({
+                      'text-status-success': tracker.info.driftRate < 1,
+                      'text-status-warning':
+                        tracker.info.driftRate >= 1 && tracker.info.driftRate < 3,
+                      'text-status-critical': tracker.info.driftRate >= 3,
+                    })}
+                    whitespace="whitespace-nowrap"
+                  >
+                    {tracker.info.driftRate.toFixed(2)}
+                  </Typography>
+                  <DriftTrendArrow tracker={tracker} />
+                </div>
+              )}
+            </Cell>
+            <Cell last={!moreInfo}>
+              <StayAlignedInfo color={fontColor} tracker={tracker} />
             </Cell>
             <Cell show={moreInfo}>
               {tracker.linearAcceleration && (
@@ -286,9 +332,6 @@ function Row({
                 </Typography>
               )}
             </Cell>
-            <Cell show={moreInfo}>
-              <StayAlignedInfo color={fontColor} tracker={tracker} />
-            </Cell>
             <Cell last={moreInfo} show={moreInfo}>
               <Typography color={fontColor} whitespace="whitespace-nowrap">
                 udp://
@@ -300,7 +343,83 @@ function Row({
           </div>
         </>
       </Tooltip>
+      {expanded && (
+        <ExpandedRow data={data} clickedTracker={clickedTracker} />
+      )}
     </TrackerRowProvider.Provider>
+  );
+}
+
+// Inline stats panel shown when a table row is expanded
+function ExpandedRow({
+  data,
+  clickedTracker,
+}: {
+  data: FlatDeviceTracker;
+  clickedTracker: (tracker: TrackerDataT) => void;
+}) {
+  const { l10n } = useLocalization();
+  const { tracker, device } = data;
+  const rate = tracker.info?.driftRate;
+  const measuredDrift = rate != null && rate !== 0;
+  const driftColor = measuredDrift
+    ? classNames({
+        'text-status-success': rate < 1,
+        'text-status-warning': rate >= 1 && rate < 3,
+        'text-status-critical': rate >= 3,
+      })
+    : 'secondary';
+
+  return (
+    <div className="mx-3 mb-2 bg-background-70 rounded-b-md p-4 flex flex-col gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Stat label={l10n.getString('tracker-table-column-drift')}>
+          {measuredDrift ? (
+            <Typography color={driftColor} whitespace="whitespace-nowrap">
+              {rate.toFixed(2)}
+            </Typography>
+          ) : (
+            <Typography color="secondary">
+              {l10n.getString('tracker-table-expanded-drift_hint')}
+            </Typography>
+          )}
+        </Stat>
+        <Stat label={l10n.getString('tracker-table-column-temperature')}>
+          <Typography whitespace="whitespace-nowrap">
+            {tracker.temp?.temp && tracker.temp.temp !== 0
+              ? tracker.temp.temp.toFixed(2)
+              : '--'}
+          </Typography>
+        </Stat>
+        <Stat label={l10n.getString('tracker-table-column-stay_aligned')}>
+          <StayAlignedInfo color="primary" tracker={tracker} />
+        </Stat>
+        <Stat label={l10n.getString('tracker-table-column-ping')}>
+          <Typography whitespace="whitespace-nowrap">
+            {device?.hardwareStatus?.ping != null
+              ? `${device.hardwareStatus.ping} ms`
+              : '--'}
+          </Typography>
+        </Stat>
+      </div>
+      {tracker.info?.isImu && <DriftChart tracker={tracker} />}
+      <div className="flex">
+        <Button variant="secondary" onClick={() => clickedTracker(tracker)}>
+          {l10n.getString('tracker-table-expanded-open_settings')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1 bg-background-60 rounded-md p-2">
+      <Typography color="secondary" whitespace="whitespace-nowrap">
+        {label}
+      </Typography>
+      {children}
+    </div>
   );
 }
 
@@ -313,6 +432,11 @@ export function TrackersTable({
 }) {
   const { config } = useConfig();
   const { highlightedTrackers } = useTrackingChecklist();
+
+  // which row is expanded to show its inline stats panel
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const rowKey = (data: FlatDeviceTracker) =>
+    `${data.tracker.trackerId?.deviceId?.id}:${data.tracker.trackerId?.trackerNum}`;
 
   const filteringEnabled =
     config?.debug && config?.devSettings?.filterSlimesAndHMD;
@@ -340,12 +464,13 @@ export function TrackersTable({
       '5rem', // TPS
       config?.devSettings?.preciseRotation ? '11rem' : '9rem', // Rotation
       '9rem', // Temp
+      '9rem', // Drift
+      '9rem', // Stay Aligned
     ];
 
     if (moreInfo) {
       cols.push('9rem'); // Linear Acc
       cols.push('9rem'); // Position
-      cols.push('9rem'); // Stay Aligned
       cols.push('11rem'); // URL
     }
 
@@ -362,13 +487,14 @@ export function TrackersTable({
           <Header name={'tracker-table-column-ping'} />
           <Header name={'tracker-table-column-tps'} />
           <Header name={'tracker-table-column-rotation'} />
-          <Header name={'tracker-table-column-temperature'} last={!moreInfo} />
+          <Header name={'tracker-table-column-temperature'} />
+          <Header name={'tracker-table-column-drift'} />
+          <Header name={'tracker-table-column-stay_aligned'} last={!moreInfo} />
           <Header
             name={'tracker-table-column-linear-acceleration'}
             show={moreInfo}
           />
           <Header name={'tracker-table-column-position'} show={moreInfo} />
-          <Header name={'tracker-table-column-stay_aligned'} show={moreInfo} />
           <Header
             name={'tracker-table-column-url'}
             show={moreInfo}
@@ -376,15 +502,22 @@ export function TrackersTable({
           />
         </div>
         <div className="flex flex-col gap-y-0">
-          {filteredSortedTrackers.map((data, index) => (
-            <Row
-              key={index}
-              clickedTracker={clickedTracker}
-              data={data}
-              highlightedTrackers={highlightedTrackers}
-              gridTemplateColumns={gridTemplateColumns}
-            />
-          ))}
+          {filteredSortedTrackers.map((data) => {
+            const key = rowKey(data);
+            return (
+              <Row
+                key={key}
+                clickedTracker={clickedTracker}
+                data={data}
+                highlightedTrackers={highlightedTrackers}
+                gridTemplateColumns={gridTemplateColumns}
+                expanded={expandedKey === key}
+                onToggle={() =>
+                  setExpandedKey((prev) => (prev === key ? null : key))
+                }
+              />
+            );
+          })}
         </div>
       </div>
     </div>

@@ -122,9 +122,22 @@ object AdjustTrackerYaw {
 		yawCorrection: Angle,
 		config: StayAlignedConfig,
 	) {
+		val pose = PlayerPose.ofTrackers(trackers)
+
+		// Only center when the player is clearly upright (standing or sitting). In any other
+		// pose(lying on the back/side/stomach, slanted, kneeling, legs in the air, or an
+		// unrecognized pose) the legs are often horizontal, where yaw is degenerate and the
+		// centering force pulls them into a wrong shape and crosses them. The locked anti-drift
+		// force (handled separately for at-rest trackers) still holds trackers in place.
+		val upright = pose == PlayerPose.STANDING ||
+			pose == PlayerPose.SITTING_IN_CHAIR ||
+			pose == PlayerPose.SITTING_ON_GROUND
+		if (config.pauseCenteringWhenNotUpright && !upright) {
+			return
+		}
+
 		val centerYaw = CenterYaw.ofSkeleton(trackers) ?: return
 
-		val pose = PlayerPose.ofTrackers(trackers)
 		val relaxedPose = RelaxedPose.forPose(pose, config) ?: return
 
 		adjustByError(tracker, yawCorrection) {

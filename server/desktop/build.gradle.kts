@@ -88,18 +88,20 @@ buildConfig {
 	useKotlinOutput { topLevelConstants = true }
 	packageName("dev.slimevr.desktop")
 
-	val gitCommitHash = providers.exec {
-		commandLine("git", "rev-parse", "--short=8", "HEAD")
-	}.standardOutput.asText.get().trim()
-	val gitVersionTag = providers.exec {
-		commandLine("git", "--no-pager", "tag", "--sort", "-taggerdate", "--points-at", "HEAD")
-	}.standardOutput.asText.get().trim()
-	val gitIsClean = providers.exec {
-		commandLine("git", "status", "--porcelain")
-	}.standardOutput.asText.get().trim().isEmpty()
-	buildConfigField("String", "GIT_COMMIT_HASH", "\"${gitCommitHash}\"")
-	buildConfigField("String", "GIT_VERSION_TAG", "\"${gitVersionTag}\"")
-	buildConfigField("boolean", "GIT_CLEAN", gitIsClean.toString())
+	// plain git commands with fallbacks so the build works outside a git repo
+	fun gitOutput(vararg args: String): String? = runCatching {
+		providers.exec {
+			commandLine("git", *args)
+		}.standardOutput.asText.get().trim()
+	}.getOrNull()
+
+	val gitVersionTag = gitOutput("--no-pager", "tag", "--sort", "-taggerdate", "--points-at", "HEAD")
+		?.split('\n')?.first() ?: ""
+	val gitCommitHash = gitOutput("rev-parse", "--verify", "--short", "HEAD") ?: "voidreality"
+	val gitClean = gitOutput("status", "--porcelain")?.isEmpty() ?: true
+	buildConfigField("String", "GIT_COMMIT_HASH", "\"$gitCommitHash\"")
+	buildConfigField("String", "GIT_VERSION_TAG", "\"${gitVersionTag.trim()}\"")
+	buildConfigField("boolean", "GIT_CLEAN", gitClean.toString())
 }
 
 tasks.run<JavaExec> {

@@ -6,13 +6,21 @@ import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import jotaiReactRefresh from 'jotai/babel/plugin-react-refresh';
 
-const commitHash = execSync('git rev-parse --verify --short=8 HEAD').toString().trim();
-const versionTag = execSync('git --no-pager tag --sort -taggerdate --points-at HEAD')
-  .toString()
-  .split('\n')[0]
-  .trim();
+// Falls back to a fixed version when building outside a git repo
+function tryGit(cmd: string): string | null {
+  try {
+    return execSync(cmd, { stdio: ['pipe', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    return null;
+  }
+}
+
+const commitHash = tryGit('git rev-parse --verify --short HEAD') ?? 'voidreality';
+const versionTag = (tryGit('git --no-pager tag --sort -taggerdate --points-at HEAD') ?? '').split('\n')[0].trim();
 // If not empty then it's not clean
-const gitCleanString = execSync('git status --porcelain').toString();
+const gitCleanString = tryGit('git status --porcelain') ?? '';
 const gitClean = gitCleanString ? false : true;
 if (!gitClean) console.log('Git is dirty because of:\n' + gitCleanString);
 

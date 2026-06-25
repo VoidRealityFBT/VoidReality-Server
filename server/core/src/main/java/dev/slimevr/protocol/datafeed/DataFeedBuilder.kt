@@ -151,6 +151,10 @@ fun createTrackerInfos(
 				fbb,
 				tracker.resetsHandler.allowDriftCompensation,
 			)
+		// only send a drift rate once a reset has produced a measurement
+		if (tracker.resetsHandler.measuredDriftRateDegPerMin != 0f) {
+			TrackerInfo.addDriftRate(fbb, tracker.resetsHandler.measuredDriftRateDegPerMin)
+		}
 	} else {
 		TrackerInfo.addIsImu(fbb, false)
 		TrackerInfo.addAllowDriftCompensation(fbb, false)

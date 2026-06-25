@@ -68,6 +68,9 @@ class LegTweaks(private val skeleton: HumanSkeleton) {
 		// misc
 		const val NEARLY_ZERO = 0.001f
 		private const val STANDING_CUTOFF_VERTICAL = 0.65f
+		// hip to foot height drop below this fraction of standing height means the body
+		// is horizontal, which catches lying on a raised surface like a bed
+		private const val LYING_HIP_FOOT_CUTOFF = 0.35f
 		private const val MAX_DISENGAGEMENT_OFFSET = 0.30f
 		private const val DEFAULT_ARM_DISTANCE = 0.15f
 		private const val MAX_CORRECTION_STRENGTH_DELTA = 1.0f
@@ -776,9 +779,15 @@ class LegTweaks(private val skeleton: HumanSkeleton) {
 
 	// returns the weight for floor plant
 	private fun getFootPlantWeight(footPos: Vector3): Float {
-		val weight =
-			if (footPos.y - floorLevel > ROTATION_CORRECTION_VERTICAL) 0.0f else 1.0f - (footPos.y - floorLevel) / ROTATION_CORRECTION_VERTICAL
-		return FastMath.clamp(weight, 0.0f, 1.0f)
+		val t = FastMath.clamp(
+			(footPos.y - floorLevel) / ROTATION_CORRECTION_VERTICAL,
+			0.0f,
+			1.0f,
+		)
+		// Smoothstep the falloff so the plant correction eases in and out as the foot
+		// leaves the ground instead of snapping with a hard linear corner
+		val smooth = t * t * (3.0f - 2.0f * t)
+		return 1.0f - smooth
 	}
 
 	// returns the amount to slerp for foot plant when foot trackers are active
@@ -790,13 +799,11 @@ class LegTweaks(private val skeleton: HumanSkeleton) {
 			MIN_DISTANCE_FOR_PLANT,
 			MAX_DISTANCE_FOR_PLANT,
 		)
-		return (
-			1 -
-				(
-					(angle - MIN_DISTANCE_FOR_PLANT) /
-						(MAX_DISTANCE_FOR_PLANT - MIN_DISTANCE_FOR_PLANT)
-					)
-			)
+		val t = (angle - MIN_DISTANCE_FOR_PLANT) /
+			(MAX_DISTANCE_FOR_PLANT - MIN_DISTANCE_FOR_PLANT)
+		// Smoothstep so tilting the foot off the plant eases out instead of snapping
+		val smooth = t * t * (3.0f - 2.0f * t)
+		return 1.0f - smooth
 	}
 
 	// returns true if it is likely the user is standing
@@ -820,6 +827,16 @@ class LegTweaks(private val skeleton: HumanSkeleton) {
 				)
 			return false
 		}
+
+		// The hip sitting close to the feet in height means a horizontal body. This is
+		// floor independent so it still detects lying down when raised on a bed, where
+		// the floor based cutoff above would still think the user is standing
+		val footAverageY = (leftFootPosition.y + rightFootPosition.y) / 2f
+		if (hipPosition.y - footAverageY < hipToFloorDist * LYING_HIP_FOOT_CUTOFF) {
+			currentDisengagementOffset = MAX_DISENGAGEMENT_OFFSET
+			return false
+		}
+
 		currentDisengagementOffset = 0f
 		return true
 	}

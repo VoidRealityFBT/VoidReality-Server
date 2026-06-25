@@ -223,6 +223,8 @@ fun createModelSettings(
 			humanPoseManager.getToggle(SkeletonConfigToggles.USE_POSITION),
 			humanPoseManager.getToggle(SkeletonConfigToggles.ENFORCE_CONSTRAINTS),
 			humanPoseManager.getToggle(SkeletonConfigToggles.CORRECT_CONSTRAINTS),
+			humanPoseManager.getToggle(SkeletonConfigToggles.FALLBACK_TRACKING),
+			humanPoseManager.getToggle(SkeletonConfigToggles.STRAIGHT_LEG_EMULATION),
 		)
 	val ratiosOffset = ModelRatios
 		.createModelRatios(
@@ -468,6 +470,7 @@ fun createStayAlignedSettings(
 		config.flatRelaxedPose.lowerLegAngleInDeg,
 		config.flatRelaxedPose.footAngleInDeg,
 		config.setupComplete,
+		config.pauseCenteringWhenNotUpright,
 	)
 
 fun createHIDSettings(

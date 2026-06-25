@@ -74,12 +74,18 @@ public class DefaultGLog extends Thread implements IGLog {
 
 	@Override
 	public void debug(String message) {
-		add(new LogEntry(Level.INFO, "[DBG] " + message));
+		// Debug is opt-in. Logging at FINE and bailing when it's disabled keeps per packet
+		// debug (like ping mismatches) from flooding the log file and the in memory recorder.
+		if (!logger.isLoggable(Level.FINE))
+			return;
+		add(new LogEntry(Level.FINE, "[DBG] " + message));
 	}
 
 	@Override
 	public void debug(String message, Throwable t) {
-		add(new LogEntry(Level.INFO, "[DBG] " + message, t));
+		if (!logger.isLoggable(Level.FINE))
+			return;
+		add(new LogEntry(Level.FINE, "[DBG] " + message, t));
 	}
 
 	@Override

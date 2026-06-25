@@ -14,6 +14,30 @@ export interface FirmwareRelease {
 const firstAsset = (assets: any[], name: string) =>
   assets.find((asset: any) => asset.name === name && asset.browser_download_url);
 
+// Maps a release asset like "BOARD_WEMOSD1MINI-firmware.bin" to its BoardType. The firmware
+// build env names match the BoardType enum keys, so we strip the affixes and look the key up.
+export function boardTypeFromAssetName(name: string): BoardType | null {
+  const m = /^BOARD_(.+)-firmware\.bin$/.exec(name);
+  if (!m) return null;
+  const val = (BoardType as Record<string, number | string>)[m[1]];
+  return typeof val === 'number' ? (val as BoardType) : null;
+}
+
+// Builds the per board file map from a releases assets, covering every board the release
+// ships a binary for, not just a hardcoded few.
+function firmwareFilesFromAssets(
+  assets: any[]
+): Partial<Record<BoardType, { url: string; digest: string }>> {
+  const files: Partial<Record<BoardType, { url: string; digest: string }>> = {};
+  for (const asset of assets) {
+    if (!asset?.name || !asset.browser_download_url) continue;
+    const board = boardTypeFromAssetName(asset.name);
+    if (board == null) continue;
+    files[board] = { url: asset.browser_download_url, digest: asset.digest };
+  }
+  return files;
+}
+
 const todaysRange = (deployData: [number, Date][]): number => {
   let maxRange = 0;
   for (const [range, date] of deployData) {
@@ -73,20 +97,16 @@ export async function fetchCurrentFirmwareRelease(
       60 * 60 * 1000
     )) || 'null'
   );
-  if (!releases) return null;
+  // A 404 or rate limit returns a JSON object, not an array, so guard before iterating
+  if (!releases || !Array.isArray(releases)) return null;
 
   const processedReleses = [];
   for (const release of releases) {
-    const fwAsset = firstAsset(release.assets, 'BOARD_SLIMEVR-firmware.bin');
-    const fw12Asset = firstAsset(release.assets, 'BOARD_SLIMEVR_V1_2-firmware.bin');
     const deployAsset = firstAsset(release.assets, 'deploy.json');
-    if (
-      !release.assets ||
-      !deployAsset ||
-      (!fwAsset && !fw12Asset) ||
-      release.prerelease
-    )
-      continue;
+    if (!release.assets || !deployAsset || release.prerelease) continue;
+
+    const firmwareFiles = firmwareFilesFromAssets(release.assets);
+    if (Object.keys(firmwareFiles).length === 0) continue;
 
     let version = release.tag_name;
     if (version.charAt(0) === 'v') {
@@ -102,16 +122,7 @@ export async function fetchCurrentFirmwareRelease(
       name: release.name,
       version,
       changelog: release.body,
-      firmwareFiles: {
-        [BoardType.SLIMEVR]: {
-          url: fwAsset.browser_download_url,
-          digest: fwAsset.digest,
-        },
-        [BoardType.SLIMEVR_V1_2]: {
-          url: fw12Asset.browser_download_url,
-          digest: fw12Asset.digest,
-        },
-      },
+      firmwareFiles,
       userCanUpdate,
     });
 
@@ -141,11 +152,9 @@ export function checkForUpdate(
     currentFirmwareRelease.version
   );
 
-  if (
-    ![BoardType.SLIMEVR, BoardType.SLIMEVR_V1_2].includes(
-      device.hardwareInfo.officialBoardType
-    )
-  ) {
+  // Only offer an update when the release ships a binary for this exact board, so we never
+  // hand a tracker firmware built for a different board.
+  if (!currentFirmwareRelease.firmwareFiles[device.hardwareInfo.officialBoardType]) {
     return canUpdate ? 'unavailable' : 'updated';
   }
 

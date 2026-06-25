@@ -70,4 +70,18 @@ object StayAlignedDefaults {
 	// Assume any new IMUs are at least OK, or else we wouldn't be writing firmware to
 	// support it. Please classify and add new IMUs to the map above!
 	val YAW_CORRECTION_DEFAULT = YAW_CORRECTION_IMU_OK
+
+	// Drift rate at which a tracker gets its base correction authority, in deg/min
+	const val DRIFT_ADAPT_REFERENCE_DEG_PER_MIN = 1.0f
+
+	// Bounds for scaling the correction by the measured drift rate. The ceiling is high so
+	// a badly drifting tracker (Example: one running hot(around 30+c)) still gets pulled back fast enough.
+	const val DRIFT_ADAPT_MIN_SCALE = 0.5f
+	const val DRIFT_ADAPT_MAX_SCALE = 4.0f
+
+	// A locked tracker keeps its baseline across brief movements and only re-locks when it
+	// settles at a yaw further than this from the baseline. This stops drift from being
+	// baked in every time the player shifts slightly, an example of this happening is; 
+	// turning over while lying down.(We all love laying on our sides so this fix is heavenly :3)
+	val RELOCK_YAW_THRESHOLD = Angle.ofDeg(8.0f)
 }

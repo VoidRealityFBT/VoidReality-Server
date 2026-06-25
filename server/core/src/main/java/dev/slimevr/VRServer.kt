@@ -35,7 +35,6 @@ import dev.slimevr.tracking.trackers.udp.TrackersUDPServer
 import dev.slimevr.trackingchecklist.TrackingChecklistManager
 import dev.slimevr.util.ann.VRServerThread
 import dev.slimevr.websocketapi.WebSocketVRBridge
-import io.eiren.util.Process
 import io.eiren.util.ann.ThreadSafe
 import io.eiren.util.ann.ThreadSecure
 import io.eiren.util.collections.FastList
@@ -56,6 +55,15 @@ typealias BridgeProvider = (
 
 const val SLIMEVR_IDENTIFIER = "dev.slimevr.SlimeVR"
 
+// Delay before auto yaw resetting a reconnected tracker, lets its data stabilize first
+// Give a reconnecting IMU time to let its fusion settle before realigning. A hot tracker
+// converges slower, so a short delay would reset on a still moving estimate and misalign.
+private const val RECONNECT_YAW_RESET_DELAY_MS = 5000L
+
+// Only auto realign a tracker that was actually offline for at least this long. A brief wifi
+// blip barely drifts, and realigning on every reconnect spams the user with constant resets
+private const val MIN_OFFLINE_FOR_REALIGN_MS = 30000L
+
 class VRServer @JvmOverloads constructor(
 	bridgeProvider: BridgeProvider = { _, _ -> sequence {} },
 	featureFlagsProvider: (VRServer) -> FeatureFlags = { _ -> FeatureFlags() },
@@ -63,8 +71,6 @@ class VRServer @JvmOverloads constructor(
 	flashingHandlerProvider: (VRServer) -> SerialFlashingHandler? = { _ -> null },
 	vrcConfigHandlerProvider: (VRServer) -> VRCConfigHandler = { _ -> VRCConfigHandlerStub() },
 	networkProfileProvider: (VRServer) -> NetworkProfileChecker = { _ -> StubNetworkProfileChecker() },
-	val processListProvider: () -> Sequence<Process> = { emptySequence() },
-	val tryOpenUri: (String) -> Unit = {},
 	acquireMulticastLock: () -> Any? = { null },
 	@JvmField val configManager: ConfigManager,
 ) : Thread("VRServer") {
@@ -75,6 +81,9 @@ class VRServer @JvmOverloads constructor(
 	val trackersServer: TrackersUDPServer
 	private val bridges: MutableList<Bridge> = FastList()
 	private val tasks: Queue<Runnable> = LinkedBlockingQueue()
+
+	// timestamp of the last periodic tracking summary log
+	private var lastTrackingSummaryMs = System.currentTimeMillis()
 	private val newTrackersConsumers: MutableList<Consumer<Tracker>> = FastList()
 	private val trackerStatusListeners: MutableList<TrackerStatusListener> = FastList()
 	private val onTick: MutableList<Runnable> = FastList()
@@ -88,7 +97,7 @@ class VRServer @JvmOverloads constructor(
 	@JvmField
 	val deviceManager: DeviceManager
 
-	// UwU
+	// UwU <- WHO TF ADDED THIS?!?!?!?!?!?!?!??!?!? (meow :3)
 	val featureFlags: FeatureFlags = featureFlagsProvider(this)
 
 	@JvmField
@@ -113,6 +122,9 @@ class VRServer @JvmOverloads constructor(
 	val protocolAPI: ProtocolAPI
 	private val timer = Timer()
 	private val resetTimerManager = ResetTimerManager()
+
+	// Body parts of trackers that reconnected and are waiting for one debounced realign.
+	private val reconnectYawResetBodyParts = Collections.synchronizedSet(HashSet<Int>())
 	val fpsTimer = NanoTimer()
 
 	@JvmField
@@ -267,6 +279,7 @@ class VRServer @JvmOverloads constructor(
 			}
 			vrcOSCHandler.update()
 			vMCHandler.update()
+			logTrackingSummaryIfDue()
 			// final long time = System.currentTimeMillis() - start;
 			try {
 				sleep(1) // 1000Hz
@@ -275,6 +288,35 @@ class VRServer @JvmOverloads constructor(
 				break
 			}
 		}
+	}
+
+	/**
+	 * Logs a per tracker quality summary every ten minutes so sessions can
+	 * be compared from the log file alone
+	 */
+	@VRServerThread
+	private fun logTrackingSummaryIfDue() {
+		val now = System.currentTimeMillis()
+		if (now - lastTrackingSummaryMs < 10 * 60 * 1000) return
+		lastTrackingSummaryMs = now
+		var driftModelsChanged = false
+		for (tracker in trackers) {
+			if (!tracker.isImu()) continue
+			val drift = tracker.resetsHandler.measuredDriftRateDegPerMin
+			val driftText = if (drift != 0f) "%.2f deg/min".format(drift) else "not measured"
+			val tempText = tracker.temperature?.let { ", temp %.1f C".format(it) } ?: ""
+			LogManager.info(
+				"[TrackingSummary] ${tracker.name}: status ${tracker.status}, drift $driftText$tempText",
+			)
+			// Persist the learned drift versus temperature curve so it carries to next session.
+			val mac = tracker.device?.hardwareIdentifier
+			if (mac != null && mac != "Unknown" &&
+				configManager.vrConfig.rememberDriftModel(mac, tracker.resetsHandler.exportDriftModel())
+			) {
+				driftModelsChanged = true
+			}
+		}
+		if (driftModelsChanged) configManager.saveConfig()
 	}
 
 	@ThreadSafe
@@ -392,6 +434,42 @@ class VRServer @JvmOverloads constructor(
 		)
 	}
 
+	/**
+	 * Realigns a reconnected tracker's yaw, the same correction used when a tracker is turned
+	 * off and back on, but also covering a fast rehandshake that never times out. The tracker
+	 * keeps its saved calibration; only the yaw that drifted while it was gone is realigned.
+	 * Calls coalesce through the shared reset timer, so a reconnect storm produces a single
+	 * yaw reset a few seconds after the last tracker returns, covering every tracker that came
+	 * back.
+	 */
+	fun scheduleReconnectYawReset(tracker: Tracker) {
+		val bodyPart = tracker.trackerPosition?.bodyPart ?: return
+		if (!tracker.isImu() || !tracker.allowReset || tracker.resetsHandler.lastResetQuaternion == null) {
+			return
+		}
+		// Only realign if the tracker was actually gone long enough to have drifted. This stops
+		// a flaky link's constant brief reconnects from firing a realign every time.
+		if (System.currentTimeMillis() - tracker.wentOfflineAtMs < MIN_OFFLINE_FOR_REALIGN_MS) {
+			return
+		}
+		reconnectYawResetBodyParts.add(bodyPart)
+		val bodyParts = synchronized(reconnectYawResetBodyParts) { reconnectYawResetBodyParts.toList() }
+		resetTimer(
+			resetTimerManager,
+			RECONNECT_YAW_RESET_DELAY_MS,
+			onTick = { progress ->
+				resetHandler.sendStarted(ResetType.Yaw, null, bodyParts, progress, RECONNECT_YAW_RESET_DELAY_MS.toInt())
+			},
+			onComplete = {
+				queueTask {
+					humanPoseManager.resetTrackersYaw("Auto reconnect", bodyParts)
+					resetHandler.sendFinished(ResetType.Yaw, null, bodyParts, RECONNECT_YAW_RESET_DELAY_MS.toInt())
+					reconnectYawResetBodyParts.clear()
+				}
+			},
+		)
+	}
+
 	fun scheduleResetTrackersMounting(resetSourceName: String?, delay: Long, bodyParts: List<Int>? = null, tx: TransactionInfo? = null) {
 		resetTimer(
 			resetTimerManager,
@@ -474,6 +552,14 @@ class VRServer @JvmOverloads constructor(
 
 	fun trackerStatusChanged(tracker: Tracker, oldStatus: TrackerStatus, newStatus: TrackerStatus) {
 		trackerStatusListeners.forEach { it.onTrackerStatusChanged(tracker, oldStatus, newStatus) }
+
+		// When a previously reset IMU tracker drops out and comes back, its calibration is
+		// preserved but its yaw drifted while offline. Schedule a yaw reset to realign it
+		// instead of needing a full recalibration. Only reconnects, not first connect.
+		// A fast rehandshake that never times out is handled in TrackersUDPServer.
+		if (!oldStatus.sendData && newStatus == TrackerStatus.OK) {
+			scheduleReconnectYawReset(tracker)
+		}
 	}
 
 	fun addTrackerStatusListener(listener: TrackerStatusListener) {

@@ -2,8 +2,10 @@ import { ReactNode } from 'react';
 import { ConfigContextC, loadConfig, useConfigProvider } from '@/hooks/config';
 import { getSentryOrCompute } from '@/utils/sentry';
 
-const config = await loadConfig();
-const isSteam = window.electronAPI ? await window.electronAPI.isSteam() : false;
+const [config, isSteam] = await Promise.all([
+  loadConfig(),
+  window.electronAPI.isSteam(),
+]);
 
 if (config?.errorTracking !== undefined) {
   // load sentry ASAP to catch early errors

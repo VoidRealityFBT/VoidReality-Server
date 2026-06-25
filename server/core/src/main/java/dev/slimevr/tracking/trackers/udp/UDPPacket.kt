@@ -163,6 +163,26 @@ data class UDPPacket4Acceleration(var acceleration: Vector3 = Vector3.NULL) :
 	}
 }
 
+// Measured bias corrected angular velocity from the firmware gyro, radians per second in
+// the tracker body frame, used to feed the prediction filter.
+data class UDPPacket28AngularVelocity(var angularVelocity: Vector3 = Vector3.NULL) :
+	UDPPacket(28),
+	SensorSpecificPacket {
+	override var sensorId = 0
+	override fun readData(buf: ByteBuffer) {
+		angularVelocity = Vector3(
+			UDPUtils.getSafeBufferFloat(buf),
+			UDPUtils.getSafeBufferFloat(buf),
+			UDPUtils.getSafeBufferFloat(buf),
+		)
+		sensorId = try {
+			buf.get().toInt() and 0xFF
+		} catch (e: BufferUnderflowException) {
+			0
+		}
+	}
+}
+
 data class UDPPacket10PingPong(var pingId: Int = 0) : UDPPacket(10) {
 	override fun readData(buf: ByteBuffer) {
 		pingId = buf.int

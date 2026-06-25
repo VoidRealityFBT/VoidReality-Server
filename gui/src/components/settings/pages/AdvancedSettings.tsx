@@ -10,11 +10,8 @@ import { Button } from '@/components/commons/Button';
 import { SettingsResetModal } from '@/components/settings/SettingsResetModal';
 
 import { error } from '@/utils/logging';
-import {
-  defaultDevSettings,
-  defaultConfig as defaultGUIConfig,
-  useConfig,
-} from '@/hooks/config';
+import { defaultConfig as defaultGUIConfig, useConfig } from '@/hooks/config';
+import { defaultValues as defaultDevConfig } from '@/components/widgets/DeveloperModeWidget';
 import { RpcMessage, SettingsResetRequestT } from 'solarxr-protocol';
 import { useWebsocketAPI } from '@/hooks/websocket-api';
 import { useElectron } from '@/hooks/electron';
@@ -24,7 +21,7 @@ function guiDefaults() {
 
   const { lang, ...guiDefaults } = defaultGUIConfig;
 
-  guiDefaults.devSettings = defaultDevSettings;
+  guiDefaults.devSettings = defaultDevConfig;
 
   return guiDefaults;
 }

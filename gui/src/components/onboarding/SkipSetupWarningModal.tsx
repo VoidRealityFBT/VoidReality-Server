@@ -43,7 +43,7 @@ export function SkipSetupWarningModal({
           <Localized id="onboarding-setup_warning" elems={{ b: <b /> }}>
             <WarningBox>
               <b>Warning:</b> The setup is needed for good tracking, this is
-              required if this is your first time using SlimeVR.
+              required if this is your first time using VoidReality.
             </WarningBox>
           </Localized>
 

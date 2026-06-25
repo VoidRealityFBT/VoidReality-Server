@@ -54,23 +54,6 @@ class DesktopHIDManager(name: String, private val trackersConsumer: Consumer<Tra
 		}
 	}
 
-	private fun onHidDeviceReattached(hidDevice: HidDevice, deviceList: MutableList<Int>, serial: String) {
-		this.devicesByHID[hidDevice] = deviceList
-		this.lastDataByHID[hidDevice] = 0
-		synchronized(this.devices) {
-			for (id in deviceList) {
-				val device = this.devices[id]
-				for (value in device.trackers.values) {
-					if (value.status == TrackerStatus.DISCONNECTED) {
-						value.status = TrackerStatus.OK
-					}
-					value.heartbeat()
-				}
-			}
-		}
-		LogManager.info("[TrackerServer] Linked HID device reattached: $serial")
-	}
-
 	private fun checkConfigureDevice(hidDevice: HidDevice) {
 		if (HIDCommon.matchesAny(hidDevice.vendorId, hidDevice.productId)) {
 			val serial = hidDevice.serialNumber ?: "Unknown HID Device"
@@ -84,7 +67,16 @@ class DesktopHIDManager(name: String, private val trackersConsumer: Consumer<Tra
 			// val product = hidDevice.product
 			// val manufacturer = hidDevice.manufacturer
 			this.devicesBySerial[serial]?.let {
-				onHidDeviceReattached(hidDevice, it, serial)
+				this.devicesByHID[hidDevice] = it
+				synchronized(this.devices) {
+					for (id in it) {
+						val device = this.devices[id]
+						for (value in device.trackers.values) {
+							if (value.status == TrackerStatus.DISCONNECTED) value.status = TrackerStatus.OK
+						}
+					}
+				}
+				LogManager.info("[TrackerServer] Linked HID device reattached: $serial")
 				return
 			}
 
@@ -126,11 +118,7 @@ class DesktopHIDManager(name: String, private val trackersConsumer: Consumer<Tra
 					currentThread().interrupt()
 					break
 				}
-				try {
-					dataRead()
-				} catch (e: Exception) {
-					LogManager.severe("[TrackerServer] HID data read failed: ${e.message}", e)
-				}
+				dataRead() // not in try catch?
 			}
 		}
 
@@ -150,11 +138,7 @@ class DesktopHIDManager(name: String, private val trackersConsumer: Consumer<Tra
 					currentThread().interrupt()
 					break
 				}
-				try {
-					deviceEnumerate()
-				} catch (e: Exception) {
-					LogManager.severe("[TrackerServer] HID device enumerate failed: ${e.message}", e)
-				}
+				deviceEnumerate() // not in try catch?
 			}
 		}
 
@@ -214,7 +198,7 @@ class DesktopHIDManager(name: String, private val trackersConsumer: Consumer<Tra
 					}
 					// LogManager.info("[TrackerServer] HID received $packetCount tracker packets")
 				} else {
-					lastDataByHID[hidDevice] = lastDataByHID.getOrDefault(hidDevice, 0) + 1
+					lastDataByHID[hidDevice] = lastDataByHID[hidDevice]!! + 1 // increment last data received
 				}
 			}
 			if (!devicesPresent) {
@@ -258,13 +242,12 @@ class DesktopHIDManager(name: String, private val trackersConsumer: Consumer<Tra
 			}
 			// Quickly reattaching a device may not be detected, so always try to open existing devices
 			for (device in devicesByHID.keys) {
-				val lastData = lastDataByHID.getOrDefault(device, 0)
 				// a receiver sends keep-alive data at 10 packets/s
-				if (lastData > 100) { // try to reopen device if no data was received recently (about >100ms)
-					if (lastData < 10000) {
+				if (lastDataByHID[device]!! > 100) { // try to reopen device if no data was received recently (about >100ms)
+					if (lastDataByHID[device]!! < 10000) {
 						LogManager.info("[TrackerServer] Reopening device ${device.serialNumber} after no data received")
 						lastDataByHID[device] = 10000 // flag once
-					} else if (lastData < 20000) {
+					} else if (lastDataByHID[device]!! < 20000) {
 						LogManager.info("[TrackerServer] Repeatedly reopening device ${device.serialNumber}")
 						lastDataByHID[device] = 20000 // flag twice
 					}

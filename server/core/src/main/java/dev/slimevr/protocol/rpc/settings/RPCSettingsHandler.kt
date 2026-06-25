@@ -218,44 +218,23 @@ class RPCSettingsHandler(var rpcHandler: RPCHandler, var api: ProtocolAPI) {
 			val legTweaks = modelSettings.legTweaks()
 
 			if (toggles != null) {
-				// Note: toggles.has____ returns the same as toggles._____ this
-				// seems like a bug
-				hpm.setToggle(SkeletonConfigToggles.EXTENDED_SPINE_MODEL, toggles.extendedSpine())
-				hpm
-					.setToggle(
-						SkeletonConfigToggles.EXTENDED_PELVIS_MODEL,
-						toggles.extendedPelvis(),
-					)
-				hpm.setToggle(SkeletonConfigToggles.EXTENDED_KNEE_MODEL, toggles.extendedKnee())
-				hpm
-					.setToggle(
-						SkeletonConfigToggles.FORCE_ARMS_FROM_HMD,
-						toggles.forceArmsFromHmd(),
-					)
-				hpm.setToggle(SkeletonConfigToggles.EXTENDED_SPINE_MODEL, toggles.extendedSpine())
-				hpm
-					.setToggle(
-						SkeletonConfigToggles.EXTENDED_PELVIS_MODEL,
-						toggles.extendedPelvis(),
-					)
-				hpm.setToggle(SkeletonConfigToggles.EXTENDED_KNEE_MODEL, toggles.extendedKnee())
-				hpm
-					.setToggle(
-						SkeletonConfigToggles.FORCE_ARMS_FROM_HMD,
-						toggles.forceArmsFromHmd(),
-					)
-				hpm.setToggle(SkeletonConfigToggles.FLOOR_CLIP, toggles.floorClip())
-				hpm
-					.setToggle(
-						SkeletonConfigToggles.SKATING_CORRECTION,
-						toggles.skatingCorrection(),
-					)
-				hpm.setToggle(SkeletonConfigToggles.TOE_SNAP, toggles.toeSnap())
-				hpm.setToggle(SkeletonConfigToggles.FOOT_PLANT, toggles.footPlant())
-				hpm.setToggle(SkeletonConfigToggles.SELF_LOCALIZATION, toggles.selfLocalization())
-				hpm.setToggle(SkeletonConfigToggles.USE_POSITION, toggles.usePosition())
-				hpm.setToggle(SkeletonConfigToggles.ENFORCE_CONSTRAINTS, toggles.enforceConstraints())
-				hpm.setToggle(SkeletonConfigToggles.CORRECT_CONSTRAINTS, toggles.correctConstraints())
+				// Only apply a toggle the client actually sent. An absent flatbuffer field
+				// reads back as false, so writing unconditionally lets a settings page that
+				// omits a toggle silently turn it off (this clobbered fallback tracking) (Used a silly word :3 (Basically saying it messed fallback-mode up))
+				if (toggles.hasExtendedSpine()) hpm.setToggle(SkeletonConfigToggles.EXTENDED_SPINE_MODEL, toggles.extendedSpine())
+				if (toggles.hasExtendedPelvis()) hpm.setToggle(SkeletonConfigToggles.EXTENDED_PELVIS_MODEL, toggles.extendedPelvis())
+				if (toggles.hasExtendedKnee()) hpm.setToggle(SkeletonConfigToggles.EXTENDED_KNEE_MODEL, toggles.extendedKnee())
+				if (toggles.hasForceArmsFromHmd()) hpm.setToggle(SkeletonConfigToggles.FORCE_ARMS_FROM_HMD, toggles.forceArmsFromHmd())
+				if (toggles.hasFloorClip()) hpm.setToggle(SkeletonConfigToggles.FLOOR_CLIP, toggles.floorClip())
+				if (toggles.hasSkatingCorrection()) hpm.setToggle(SkeletonConfigToggles.SKATING_CORRECTION, toggles.skatingCorrection())
+				if (toggles.hasToeSnap()) hpm.setToggle(SkeletonConfigToggles.TOE_SNAP, toggles.toeSnap())
+				if (toggles.hasFootPlant()) hpm.setToggle(SkeletonConfigToggles.FOOT_PLANT, toggles.footPlant())
+				if (toggles.hasSelfLocalization()) hpm.setToggle(SkeletonConfigToggles.SELF_LOCALIZATION, toggles.selfLocalization())
+				if (toggles.hasUsePosition()) hpm.setToggle(SkeletonConfigToggles.USE_POSITION, toggles.usePosition())
+				if (toggles.hasEnforceConstraints()) hpm.setToggle(SkeletonConfigToggles.ENFORCE_CONSTRAINTS, toggles.enforceConstraints())
+				if (toggles.hasCorrectConstraints()) hpm.setToggle(SkeletonConfigToggles.CORRECT_CONSTRAINTS, toggles.correctConstraints())
+				if (toggles.hasFallbackTracking()) hpm.setToggle(SkeletonConfigToggles.FALLBACK_TRACKING, toggles.fallbackTracking())
+				if (toggles.hasStraightLegEmulation()) hpm.setToggle(SkeletonConfigToggles.STRAIGHT_LEG_EMULATION, toggles.straightLegEmulation())
 			}
 
 			if (ratios != null) {
@@ -367,6 +346,7 @@ class RPCSettingsHandler(var rpcHandler: RPCHandler, var api: ProtocolAPI) {
 			config.flatRelaxedPose.upperLegAngleInDeg = requestConfig.flatUpperLegAngle()
 			config.flatRelaxedPose.lowerLegAngleInDeg = requestConfig.flatLowerLegAngle()
 			config.flatRelaxedPose.footAngleInDeg = requestConfig.flatFootAngle()
+			config.pauseCenteringWhenNotUpright = requestConfig.pauseCenteringWhenNotUpright()
 		}
 
 		if (req.hidSettings() != null) {

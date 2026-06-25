@@ -9,16 +9,16 @@
 
 websocket-connecting = Ansluter till server
 websocket-connection_lost = Anslutning förlorad till server. Försöker återansluta
-websocket-connection_lost-desc = Det verkar som att SlimeVR servern kraschade. Kolla loggen och starta om programmet.
+websocket-connection_lost-desc = Det verkar som att VoidReality servern kraschade. Kolla loggen och starta om programmet.
 websocket-timedout = Kunde ej koppla till servern.
-websocket-timedout-desc = Det verkar som att SlimeVR servern kraschade eller löpte ur tidsgränsen. Kolla loggen och starta om programmet.
-websocket-error-close = Stäng SlimeVR
+websocket-timedout-desc = Det verkar som att VoidReality servern kraschade eller löpte ur tidsgränsen. Kolla loggen och starta om programmet.
+websocket-error-close = Stäng VoidReality
 websocket-error-logs = Öppna logg-mappen
 
 ## Update notification
 
 version_update-title = Ny version tillgänglig: { $version }
-version_update-description = Att trycka på "{ version_update-update }" kommer ladda ner SlimeVR installatorn för dig
+version_update-description = Att trycka på "{ version_update-update }" kommer ladda ner VoidReality installatorn för dig
 version_update-update = Updatera
 version_update-close = Stäng
 
@@ -28,7 +28,7 @@ tips-find_tracker = Osäker vilken spårare är vilken? Dela en spårare och den
 tips-do_not_move_heels = Se till att dina hälar inte rör sig under inspelningen!
 tips-file_select = Dra och släpp filer som du vill använda, eller <u>bläddra</u>.
 tips-tap_setup = Du kan långsamt trycka 2 gånger på din spårare för att välja den istället att välja den på menun.
-tips-turn_on_tracker = Använder du officiella SlimeVR spårare? Glöm inte att <b> <em>sätta på din spårare</em></b> efter du ansluter den till datorn!
+tips-turn_on_tracker = Använder du officiella VoidReality spårare? Glöm inte att <b> <em>sätta på din spårare</em></b> efter du ansluter den till datorn!
 tips-failed_webgl = Misslyckades att initiera WebGL.
 
 ## Units
@@ -322,6 +322,7 @@ tracker-table-column-battery = Batteri
 tracker-table-column-ping = Ping
 tracker-table-column-tps = TPS
 tracker-table-column-temperature = Temperatur i Celsius:
+tracker-table-column-drift = Drift deg/min
 tracker-table-column-linear-acceleration = Accel. X/Y/Z
 tracker-table-column-rotation = Rotation X/Y/Z
 tracker-table-column-position = Position X/Y/Z
@@ -354,6 +355,7 @@ tracker-infos-data_support = Datastöd
 tracker-infos-imu = IMU-sensor
 tracker-infos-board_type = Huvudkrets
 tracker-infos-network_version = Protokollsversion
+tracker-infos-drift_rate = Yaw drift deg/min
 tracker-infos-magnetometer = Magnetometer
 tracker-infos-magnetometer-status-v1 =
     { $status ->
@@ -389,7 +391,7 @@ tracker-settings-name_section-description = Ge den ett gulligt smeknamn :)
 tracker-settings-name_section-placeholder = Bokstensmannens vänstra ben
 tracker-settings-name_section-label = Sensorns namn
 tracker-settings-forget = Glöm spårning
-tracker-settings-forget-description = Tar bort trackern från SlimeVR-servern och förhindrar den från att ansluta till den tills servern startas om. Konfigurationen av trackern kommer inte att gå förlorad.
+tracker-settings-forget-description = Tar bort trackern från VoidReality-servern och förhindrar den från att ansluta till den tills servern startas om. Konfigurationen av trackern kommer inte att gå förlorad.
 tracker-settings-forget-label = Glöm spårning
 tracker-settings-update-low-battery = Kan ej uppdatera. Batteriet är under 50%
 tracker-settings-update-up_to_date = Uppdaterad
@@ -668,17 +670,17 @@ settings-general-interface-feedback_sound-description = Detta alternativ spelar 
 settings-general-interface-feedback_sound-label = Feedback-ljud
 settings-general-interface-feedback_sound-volume = Volym för återkopplingsljud
 settings-general-interface-connected_trackers_warning = Varning för uppkopplade spårare
-settings-general-interface-connected_trackers_warning-description = Detta alternativ kommer att visa ett popup-fönster varje gång du försöker lämna SlimeVR medan du har en eller flera anslutna trackers. Det påminner dig om att stänga av dina trackers när du är klar för att spara batteritid.
+settings-general-interface-connected_trackers_warning-description = Detta alternativ kommer att visa ett popup-fönster varje gång du försöker lämna VoidReality medan du har en eller flera anslutna trackers. Det påminner dig om att stänga av dina trackers när du är klar för att spara batteritid.
 settings-general-interface-connected_trackers_warning-label = Varning för uppkopplade trackers vid utresa
 
 ## Behavior settings
 
 settings-interface-behavior = Beteende
 settings-general-interface-use_tray = Minimera till systemfältet
-settings-general-interface-use_tray-description = Låter dig stänga fönstret utan att stänga SlimeVR-servern så att du kan fortsätta använda den utan att GUI stör dig.
+settings-general-interface-use_tray-description = Låter dig stänga fönstret utan att stänga VoidReality-servern så att du kan fortsätta använda den utan att GUI stör dig.
 settings-general-interface-use_tray-label = Minimera till systemfältet
 settings-general-interface-discord_presence = Dela aktivitet på Discord
-settings-general-interface-discord_presence-description = Berättar för din Discord-klient att du använder SlimeVR tillsammans med antalet IMU-trackers du använder.
+settings-general-interface-discord_presence-description = Berättar för din Discord-klient att du använder VoidReality tillsammans med antalet IMU-trackers du använder.
 settings-general-interface-discord_presence-label = Dela aktivitet på Discord
 settings-interface-behavior-error_tracking = Error samling via Sentry.io
 settings-interface-behavior-error_tracking-description_v2 =
@@ -720,7 +722,7 @@ settings-osc-router-enable-description = Växla vidarebefordran av meddelanden.
 settings-osc-router-enable-label = Aktivera
 settings-osc-router-network = Nätverksportar
 # This cares about multilines
-settings-osc-router-network-description = Ställ in portarna för att lyssna och skicka data. Dessa kan vara desamma som andra portar som används i SlimeVR-servern.
+settings-osc-router-network-description = Ställ in portarna för att lyssna och skicka data. Dessa kan vara desamma som andra portar som används i VoidReality-servern.
 settings-osc-router-network-address = Nätverksadress
 settings-osc-router-network-address-description = Ange den adress som data ska skickas till.
 settings-osc-router-network-address-placeholder = IPV4-adress
@@ -815,10 +817,10 @@ settings-utils-advanced-reset_warning =
 settings-utils-advanced-reset_warning-reset = Återställ inställningar
 settings-utils-advanced-reset_warning-cancel = Avbryt
 settings-utils-advanced-open_data-v1 = Config mapp
-settings-utils-advanced-open_data-description-v1 = Öppna SlimeVR's config mapp i filutforskaren, som innehåller konfigurationen.
+settings-utils-advanced-open_data-description-v1 = Öppna VoidReality's config mapp i filutforskaren, som innehåller konfigurationen.
 settings-utils-advanced-open_data-label = Öppna mapp
 settings-utils-advanced-open_logs = Logg-mapp
-settings-utils-advanced-open_logs-description = Öppna SlimeVR's config mapp i filutforskaren, som innehåller appens loggar
+settings-utils-advanced-open_logs-description = Öppna VoidReality's config mapp i filutforskaren, som innehåller appens loggar
 settings-utils-advanced-open_logs-label = Öppna mapp
 
 ## Home Screen
@@ -835,7 +837,7 @@ onboarding-wip = Pågående arbete
 onboarding-previous_step = Föregående steget
 onboarding-setup_warning =
     <b>Varning:</b> Den inledande installationen krävs för bra spårning,
-    den behövs om det är första gången du använder SlimeVR.
+    den behövs om det är första gången du använder VoidReality.
 onboarding-setup_warning-skip = Hoppa över inställning
 onboarding-setup_warning-cancel = Fortsätt inställning
 
@@ -871,7 +873,7 @@ onboarding-reset_tutorial-0 =
 
 ## Setup start
 
-onboarding-home = Välkommen till SlimeVR
+onboarding-home = Välkommen till VoidReality
 onboarding-home-start = Låt oss komma igång!
 
 ## Setup done
@@ -907,7 +909,7 @@ onboarding-connect_serial-error-modal-no_serial_device_found-desc =
     Om detta inte fungerar:
     -Testa med an annan USB sladd
     -Testa med en annan USB-port
-    -Testa installera om SlimeVR servern och välj "USB Drivers" i komponentsektionen.
+    -Testa installera om VoidReality servern och välj "USB Drivers" i komponentsektionen.
 # $amount (Number) - Amount of trackers connected (this is a number, but you can use CLDR plural rules for your language)
 # More info on https://www.unicode.org/cldr/cldr-aux/charts/22/supplemental/language_plural_rules.html
 # English in this case only has 2 plural rules, which are "one" and "other",
@@ -1075,7 +1077,7 @@ onboarding-manual_mounting-next = Nästa steg
 
 onboarding-automatic_mounting-back = Gå tillbaka för att gå in i VR
 onboarding-automatic_mounting-title = Monterings-Kalibrering
-onboarding-automatic_mounting-description = För att SlimeVR trackers ska fungera, so måste vi tilldela en monterings-riktning för dina trackers för att linjera de med din fysiska tracker-montering.
+onboarding-automatic_mounting-description = För att VoidReality trackers ska fungera, so måste vi tilldela en monterings-riktning för dina trackers för att linjera de med din fysiska tracker-montering.
 onboarding-automatic_mounting-manual_mounting = Manuell montering
 onboarding-automatic_mounting-next = Nästa steg
 onboarding-automatic_mounting-prev_step = Föregående steg
@@ -1111,7 +1113,7 @@ onboarding-manual_proportions-estimated_height = Uppskattad användarlängd
 
 onboarding-automatic_proportions-back = Gå tillbaka till manuella proportioner
 onboarding-automatic_proportions-title = Mät din kropp
-onboarding-automatic_proportions-description = För att SlimeVR-trackers ska fungera behöver vi veta längden på dina ben. Denna korta kalibrering kommer att mäta den åt dig.
+onboarding-automatic_proportions-description = För att VoidReality-trackers ska fungera behöver vi veta längden på dina ben. Denna korta kalibrering kommer att mäta den åt dig.
 onboarding-automatic_proportions-manual = Manuella proportionern
 onboarding-automatic_proportions-prev_step = Föregående steg
 onboarding-automatic_proportions-put_trackers_on-title = Sätt på alla dina trackers
@@ -1199,7 +1201,7 @@ tray_or_exit_modal-description = Detta gör att du kan välja om du vill avsluta
 
 unknown_device-modal-description =
     Det finns en ny tracker med MAC-adress <b>{ $deviceId }</b>.
-    Vill du ansluta den till SlimeVR?
+    Vill du ansluta den till VoidReality?
 vrc_config-page-help = Hittar inte inställningen?
 vrc_config-page-help-desc = Kolla vår <a>dokumentation på detta området!</a>
 vrc_config-page-big_menu = Tracking & IK (stora menyn)
@@ -1249,4 +1251,59 @@ error_collection_modal-confirm = Jag tillåter.
 error_collection_modal-cancel = Jag vill inte
 
 ## Tracking checklist section
-
+home-drift_summary = Session drift deg/min
+home-drift_summary-average = Average
+home-drift_summary-worst = Worst
+home-drift_summary-measured = Measured
+tracker-infos-drift_chart = Drift per reset deg/min
+tracker-infos-drift_chart-resets = { $amount } resets measured
+tracker-card-drift = Drift
+tracker-card-drift-tooltip = Yaw drift per minute, measured at each reset. Green is under 1, yellow 1 to 3, red over 3. Lower is better.
+tracker-card-drift-tooltip-temp = Temperature: { $temp } C
+tracker-table-expanded-open_settings = Open tracker settings
+tracker-table-expanded-drift_hint = Do 2 yaw resets 60s apart to measure
+settings-general-fk_settings-fallback = Fallback tracking
+settings-general-fk_settings-fallback-description = When a tracker stops sending data, estimate that limb from its live parent instead of freezing it at the last pose.
+settings-general-fk_settings-fallback-enabled = Estimate lost trackers from parent
+home-stay_aligned-active = Stay Aligned active
+home-stay_aligned-correction = Total correction deg
+home-stay_aligned-locked = Locked
+diagnostics-title = Tracking Diagnostics
+diagnostics-description = Per tracker drift, temperature, alignment and connection health for this session. Click a tracker to open its settings.
+diagnostics-no_trackers = No IMU trackers connected.
+diagnostics-drift = Drift deg/min
+diagnostics-temp = Temp C
+diagnostics-stay_aligned = Stay Aligned
+diagnostics-ping = Ping
+diagnostics-packet_loss = Packet loss
+diagnostics-battery = Battery
+settings-general-steamvr-trackers-emulate_all-label = Emulate all trackers (20 point)
+settings-general-steamvr-trackers-emulate_all-description = Sends a tracker for every body part, estimating the ones you have no physical tracker for. Turns off automatic toggling while on.
+settings-general-steamvr-trackers-emulate_all-requirement = Needs at least 2 below knee trackers (foot or ankle) to anchor the leg estimation.
+navbar-emulated = Emulated
+emulated-title = Emulated Trackers
+emulated-open_settings = Settings
+emulated-description = { $emulated } of { $total } body parts are estimated, the rest come from physical trackers.
+emulated-none = No body trackers yet.
+emulated-badge-emulated = Emulated
+emulated-badge-real = Real
+settings-sidebar-emulated = Emulated
+settings-sidebar-emulated_trackers = Emulated trackers
+settings-emulated = Emulated Trackers
+settings-emulated-description =
+    Emulated trackers fill in body parts you have no physical tracker for. They are estimated from the trackers you do have and sent as their own trackers, so you reach more tracking points than you own. Toggle them fully on or off here.
+    Leg estimation needs an anchor below each knee (a foot or ankle tracker) so the pose can be solved instead of guessed.
+    This is different from fallback tracking: fallback only steps in when a physical tracker dies, temporarily feeding that tracker's output from an estimate until it comes back. Fallback lives under Tracker Mechanics, not here.
+settings-emulated-enable = Emulate all trackers
+settings-emulated-enable-description = Sends a tracker for every body part, estimating the ones without a physical tracker. Also enables the VRChat OSC roles so they reach VRChat directly, bypassing SteamVR.
+settings-emulated-enable-label = Emulate all trackers (20 point)
+settings-emulated-requirement = Below knee trackers detected: { $count } of 2 needed
+settings-emulated-straight_leg = Straight leg estimation
+settings-emulated-straight_leg-description =
+    For an emulated thigh with a tracked shin or ankle, aligns the thigh with the shin so the leg follows it as one segment instead of hanging from the hip.
+    Looks right standing and walking, approximate when the knee is bent. Only affects emulated legs.
+settings-emulated-straight_leg-label = Straight leg estimation
+toolbar-emulated_trackers = { $count } emulated { $count ->
+    [one] tracker
+   *[other] trackers
+}

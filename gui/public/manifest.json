@@ -1,10 +1,10 @@
 {
-  "name": "SlimeVR GUI",
-  "short_name": "SlimeVR GUI",
-  "description": "A web interface for controlling the SlimeVR Server software",
+  "name": "VoidReality",
+  "short_name": "VoidReality",
+  "description": "A web interface for controlling the VoidReality tracking server",
   "display": "standalone",
-  "theme_color": "#663499",
-  "background_color": "#663499",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a",
   "icons": [
     {
       "src": "logo.svg",

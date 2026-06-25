@@ -1,4 +1,5 @@
 import { useConfig } from '@/hooks/config';
+import { useLocalization } from '@fluent/react';
 import { MouseEventHandler } from 'react';
 import {
   DeviceDataT,
@@ -17,6 +18,33 @@ import { Tooltip } from '@/components/commons/Tooltip';
 import { FirmwareIcon } from '@/components/commons/FirmwareIcon';
 import { WarningIcon } from '@/components/commons/icon/WarningIcon';
 import { trackingchecklistIdtoLabel } from '@/hooks/tracking-checklist';
+import { DriftTrendArrow } from './DriftTrendArrow';
+import { useAtomValue } from 'jotai';
+import { computedTrackersAtom } from '@/store/app-store';
+import { formatVector3 } from '@/utils/formatting';
+import { useTrackerFallback } from '@/hooks/fallback';
+
+// While a tracker is off, its own rotation is frozen. This reads the live estimate the
+// server outputs in its place from the matching synthetic tracker, so the fallback can be seen working
+function FallbackEstimate({ tracker }: { tracker: TrackerDataT }) {
+  const { l10n } = useLocalization();
+  const computed = useAtomValue(computedTrackersAtom);
+  const estimate = computed.find(
+    ({ tracker: t }) =>
+      t.info?.isComputed && t.info.bodyPart === tracker.info?.bodyPart
+  )?.tracker;
+  const { useRawRotationEulerDegrees } = useTracker(estimate ?? tracker);
+  const rot = useRawRotationEulerDegrees();
+  if (!estimate) return null;
+
+  return (
+    <Typography variant="standard" color="text-status-special">
+      {l10n.getString('tracker-status-fallback-estimate', {
+        rot: formatVector3(rot, 0),
+      })}
+    </Typography>
+  );
+}
 
 function TrackerBig({
   device,
@@ -30,6 +58,7 @@ function TrackerBig({
   const { useName } = useTracker(tracker);
 
   const trackerName = useName();
+  const { fallback } = useTrackerFallback(tracker);
 
   return (
     <div className="flex flex-col justify-center rounded-md py-3 pr-4 pl-4 w-full gap-2 box-border my-8 px-6 h-32">
@@ -42,8 +71,17 @@ function TrackerBig({
         </Typography>
       </div>
       <div className="flex justify-center">
-        <TrackerStatus status={tracker.status} />
+        <TrackerStatus
+          status={tracker.status}
+          tracker={tracker}
+          device={device}
+        />
       </div>
+      {fallback && (
+        <div className="flex justify-center">
+          <FallbackEstimate tracker={tracker} />
+        </div>
+      )}
       <div className="min-h-9 flex text-default justify-center gap-5 flex-wrap items-center">
         {device && device.hardwareStatus && (
           <>
@@ -86,6 +124,7 @@ function TrackerSmol({
   const { useName } = useTracker(tracker);
 
   const trackerName = useName();
+  const { fallback } = useTrackerFallback(tracker);
 
   return (
     <div className="flex rounded-md py-3 px-4 w-full gap-4 h-[70px]">
@@ -112,8 +151,18 @@ function TrackerSmol({
         <Typography bold truncate variant="section-title">
           {trackerName}
         </Typography>
-        <TrackerStatus status={tracker.status} />
+        <TrackerStatus
+          status={tracker.status}
+          tracker={tracker}
+          device={device}
+        />
+        {fallback && <FallbackEstimate tracker={tracker} />}
       </div>
+      {tracker.info?.isImu && (
+        <div className="flex flex-col justify-center items-center">
+          <TrackerDrift tracker={tracker} />
+        </div>
+      )}
       {device && device.hardwareStatus && (
         <>
           <div className="flex flex-col justify-center items-center">
@@ -139,6 +188,59 @@ function TrackerSmol({
         </>
       )}
     </div>
+  );
+}
+
+// compact yaw drift readout shown on the tracker card
+function TrackerDrift({ tracker }: { tracker: TrackerDataT }) {
+  const { l10n } = useLocalization();
+  const rate = tracker.info?.driftRate;
+  const measured = rate != null && rate !== 0;
+  const temp = tracker.temp?.temp;
+  const hasTemp = temp != null && temp !== 0;
+
+  return (
+    <Tooltip
+      preferedDirection="top"
+      content={
+        <div className="flex flex-col gap-1 max-w-52">
+          <Typography bold>{l10n.getString('tracker-card-drift')}</Typography>
+          <Typography>
+            {l10n.getString('tracker-card-drift-tooltip')}
+          </Typography>
+          {hasTemp && (
+            <Typography color="secondary">
+              {l10n.getString('tracker-card-drift-tooltip-temp', {
+                temp: temp.toFixed(1),
+              })}
+            </Typography>
+          )}
+        </div>
+      }
+    >
+      <div className="flex flex-col items-center justify-center min-w-12">
+        <div className="flex items-center gap-1">
+          <Typography
+            color={
+              !measured
+                ? 'secondary'
+                : classNames({
+                    'text-status-success': rate < 1,
+                    'text-status-warning': rate >= 1 && rate < 3,
+                    'text-status-critical': rate >= 3,
+                  })
+            }
+            whitespace="whitespace-nowrap"
+          >
+            {measured ? rate.toFixed(2) : '--'}
+          </Typography>
+          {measured && <DriftTrendArrow tracker={tracker} />}
+        </div>
+        <Typography variant="standard" color="secondary">
+          {l10n.getString('tracker-card-drift')}
+        </Typography>
+      </div>
+    </Tooltip>
   );
 }
 

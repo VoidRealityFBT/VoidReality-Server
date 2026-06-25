@@ -35,6 +35,7 @@ export type StayAlignedSettingsForm = {
   flatLowerLegAngle: number;
   flatFootAngle: number;
   setupComplete: boolean;
+  pauseCenteringWhenNotUpright: boolean;
 };
 
 export const defaultStayAlignedSettings: StayAlignedSettingsForm = {
@@ -54,6 +55,7 @@ export const defaultStayAlignedSettings: StayAlignedSettingsForm = {
   flatLowerLegAngle: 0.0,
   flatFootAngle: 0.0,
   setupComplete: false,
+  pauseCenteringWhenNotUpright: true,
 };
 
 export function serializeStayAlignedSettings(
@@ -75,6 +77,8 @@ export function serializeStayAlignedSettings(
   serialized.flatUpperLegAngle = settings.flatUpperLegAngle;
   serialized.flatLowerLegAngle = settings.flatLowerLegAngle;
   serialized.flatFootAngle = settings.flatFootAngle;
+  serialized.pauseCenteringWhenNotUpright =
+    settings.pauseCenteringWhenNotUpright;
   return serialized;
 }
 
@@ -220,6 +224,15 @@ export function StayAlignedSettings({
                 'settings-stay_aligned-hide_yaw_correction-label'
               )}
               disabled={!config.setupComplete}
+            />
+            <CheckBox
+              variant="toggle"
+              outlined
+              control={control}
+              name="stayAligned.pauseCenteringWhenNotUpright"
+              label={l10n.getString(
+                'settings-stay_aligned-pause_when_not_upright-label'
+              )}
             />
           </div>
         </div>

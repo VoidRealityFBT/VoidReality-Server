@@ -10,7 +10,7 @@ import { useWebsocketAPI } from '@/hooks/websocket-api';
 import { CloseIcon } from './commons/icon/CloseIcon';
 import { MaximiseIcon } from './commons/icon/MaximiseIcon';
 import { MinimiseIcon } from './commons/icon/MinimiseIcon';
-import { SlimeVRIcon } from './commons/icon/SimevrIcon';
+import { VoidRealityIcon } from './commons/icon/VoidRealityIcon';
 import { ProgressBar } from './commons/ProgressBar';
 import { Typography } from './commons/Typography';
 import { DownloadIcon } from './commons/icon/DownloadIcon';
@@ -40,7 +40,7 @@ export function VersionTag() {
         openUrl(url);
       }}
     >
-      {(__VERSION_TAG__ || __COMMIT_HASH__) + (__GIT_CLEAN__ ? '' : '-dirty')}
+      SlimeVR Based
     </div>
   );
 }
@@ -148,7 +148,7 @@ export function TopBar({
                   to="/"
                   className="flex justify-around flex-col select-all"
                 >
-                  <SlimeVRIcon />
+                  <VoidRealityIcon />
                 </NavLink>
               )}
               {!isMobile && (
@@ -156,7 +156,7 @@ export function TopBar({
                   className={classNames('flex justify-around flex-col')}
                   data-electron-drag-region
                 >
-                  <Typography>SlimeVR</Typography>
+                  <Typography>VoidReality</Typography>
                 </div>
               )}
               {(!doesMatchSettings || !isMobile) && <VersionTag />}

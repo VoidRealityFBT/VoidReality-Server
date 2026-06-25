@@ -18,6 +18,13 @@ export interface FlatDeviceTracker {
 
 export const ignoredTrackersAtom = atom(new Set<string>());
 
+// Whether the server keeps a dead trackers output alive from an estimate. Defaults to
+// the server default so the home tab can label trackers as in fallback before settings load
+export const fallbackEnabledAtom = atom(true);
+
+// When the last reset finished (ms). Used to estimate accumulated drift for the reset reminder.
+export const lastResetTimeAtom = atom(Date.now());
+
 export const datafeedAtom = atom(new DataFeedUpdateT());
 
 export const bonesAtom = atom<BoneT[]>([]);

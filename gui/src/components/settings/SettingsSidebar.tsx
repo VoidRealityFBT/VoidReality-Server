@@ -76,6 +76,16 @@ export function SettingsSidebar() {
         </div>
       </div>
       <div className="flex flex-col gap-3">
+        <Typography variant="section-title" id="settings-sidebar-emulated" />
+        <div className="flex flex-col gap-2">
+          <SettingsLink
+            to="/settings/emulated"
+            scrollTo="emulated"
+            id="settings-sidebar-emulated_trackers"
+          />
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
         <Typography variant="section-title" id="settings-sidebar-interface" />
         <div className="flex flex-col gap-2">
           <SettingsLink
@@ -127,6 +137,10 @@ export function SettingsSidebar() {
         <div className="flex flex-col gap-3">
           <Typography variant="section-title" id="settings-sidebar-utils" />
           <div className="flex flex-col gap-2">
+            <SettingsLink
+              to="/settings/network"
+              id="settings-sidebar-network"
+            />
             <SettingsLink to="/settings/serial" id="settings-sidebar-serial" />
             <SettingsLink
               to="/settings/firmware-tool"
@@ -142,6 +156,11 @@ export function SettingsSidebar() {
             <SettingsLink
               to="/settings/advanced"
               id="settings-sidebar-advanced"
+            />
+            <SettingsLink
+              to="/settings/updates"
+              scrollTo="updates"
+              id="settings-sidebar-updates"
             />
           </div>
         </div>

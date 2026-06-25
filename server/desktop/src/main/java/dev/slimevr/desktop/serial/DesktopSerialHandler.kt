@@ -5,7 +5,6 @@ import com.fazecast.jSerialComm.SerialPortEvent
 import com.fazecast.jSerialComm.SerialPortMessageListener
 import dev.slimevr.serial.SerialHandler
 import dev.slimevr.serial.SerialListener
-import dev.slimevr.tracking.trackers.hid.HIDCommon
 import io.eiren.util.logging.LogManager
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -89,14 +88,13 @@ class DesktopSerialHandler :
 	}
 
 	@Synchronized
-	override fun openSerial(portLocation: String?, auto: Boolean, autoIncludeHid: Boolean): Boolean {
+	override fun openSerial(portLocation: String?, auto: Boolean): Boolean {
 		LogManager.info("[SerialHandler] Trying to open: $portLocation, auto: $auto")
 		val ports = SerialPort.getCommPorts()
 		lastKnownPorts = ports.map { SerialPortWrapper(it) }.toSet()
 		val newPort: SerialPort? = ports.find {
 			(!auto && it.portLocation == portLocation) ||
-				(auto && isKnownBoard(SerialPortWrapper(it))) ||
-				(auto && autoIncludeHid && HIDCommon.matchesAny(it.vendorID, it.productID))
+				(auto && isKnownBoard(SerialPortWrapper(it)))
 		}
 		if (newPort == null) {
 			LogManager.info(
@@ -246,7 +244,7 @@ class DesktopSerialHandler :
 		get() = SerialPort.getCommPorts()
 			.asSequence()
 			.map { SerialPortWrapper(it) }
-			.filter { isKnownBoard(it) || HIDCommon.matchesAny(it.vendorId, it.productId) }
+			.filter { isKnownBoard(it) }
 			.asStream()
 
 	private fun detectNewPorts() {
@@ -263,7 +261,7 @@ class DesktopSerialHandler :
 		}
 	}
 
-	override fun getCurrentPort(): SlimeSerialPort? {
+	override fun getCurrentPort(): dev.slimevr.serial.SerialPort? {
 		val port = this.currentPort ?: return null
 		return SerialPortWrapper(port)
 	}

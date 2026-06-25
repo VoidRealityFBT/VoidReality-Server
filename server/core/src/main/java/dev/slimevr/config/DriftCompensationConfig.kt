@@ -4,7 +4,7 @@ import dev.slimevr.VRServer
 
 class DriftCompensationConfig {
 
-	// Is drift compensation enabled
+	// Is drift compensation enabled, off by default since it conflicts with Stay Aligned
 	var enabled = false
 
 	// Is drift prediction enabled

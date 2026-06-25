@@ -8,6 +8,7 @@ import dev.slimevr.firmware.UpdateStatusEvent
 import dev.slimevr.protocol.GenericConnection
 import dev.slimevr.protocol.ProtocolAPI
 import dev.slimevr.protocol.rpc.RPCHandler
+import io.eiren.util.logging.LogManager
 import solarxr_protocol.datatypes.DeviceIdT
 import solarxr_protocol.datatypes.DeviceIdTableT
 import solarxr_protocol.rpc.FirmwareUpdateDeviceId
@@ -40,21 +41,30 @@ class RPCFirmwareUpdateHandler(
 		conn: GenericConnection,
 		messageHeader: RpcMessageHeader,
 	) {
-		api.server.firmwareUpdateHandler.cancelUpdates()
+		// Never let a client message take the server down
+		try {
+			api.server.firmwareUpdateHandler.cancelUpdates()
+		} catch (e: Exception) {
+			LogManager.severe("[RPCFirmwareUpdateHandler] Failed to cancel updates", e)
+		}
 	}
 
 	private fun onFirmwareUpdateRequest(
 		conn: GenericConnection,
 		messageHeader: RpcMessageHeader,
 	) {
-		val req =
-			(messageHeader.message(FirmwareUpdateRequest()) as FirmwareUpdateRequest).unpack()
-		val updateDeviceId = buildUpdateDeviceId(req) ?: return
+		try {
+			val req =
+				(messageHeader.message(FirmwareUpdateRequest()) as FirmwareUpdateRequest).unpack()
+			val updateDeviceId = buildUpdateDeviceId(req) ?: return
 
-		api.server.firmwareUpdateHandler.queueFirmwareUpdate(
-			req,
-			updateDeviceId,
-		)
+			api.server.firmwareUpdateHandler.queueFirmwareUpdate(
+				req,
+				updateDeviceId,
+			)
+		} catch (e: Exception) {
+			LogManager.severe("[RPCFirmwareUpdateHandler] Failed to handle update request", e)
+		}
 	}
 
 	override fun onUpdateStatusChange(event: UpdateStatusEvent<*>) {

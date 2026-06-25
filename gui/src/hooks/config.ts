@@ -1,4 +1,8 @@
 import { createContext, useContext, useState } from 'react';
+import {
+  defaultValues as defaultDevSettings,
+  DeveloperModeWidgetForm,
+} from '@/components/widgets/DeveloperModeWidget';
 import { error } from '@/utils/logging';
 import { useDebouncedEffect } from './timeout';
 import { waitUntil } from '@/utils/a11y';
@@ -21,33 +25,13 @@ export enum AssignMode {
   All = 'all',
 }
 
-export interface DeveloperModeConfig {
-  highContrast: boolean;
-  preciseRotation: boolean;
-  fastDataFeed: boolean;
-  filterSlimesAndHMD: boolean;
-  sortByName: boolean;
-  rawSlimeRotation: boolean;
-  moreInfo: boolean;
-}
-
-export const defaultDevSettings: DeveloperModeConfig = {
-  highContrast: false,
-  preciseRotation: false,
-  fastDataFeed: false,
-  filterSlimesAndHMD: false,
-  sortByName: false,
-  rawSlimeRotation: false,
-  moreInfo: false,
-};
-
 export interface Config {
   uuid: string;
   debug: boolean;
   lang: string;
   doneOnboarding: boolean;
   watchNewDevices: boolean;
-  devSettings: DeveloperModeConfig;
+  devSettings: DeveloperModeWidgetForm;
   feedbackSound: boolean;
   feedbackSoundVolume: number;
   connectedTrackersWarning: boolean;
@@ -82,7 +66,7 @@ export const defaultConfig: Config = {
   feedbackSound: true,
   feedbackSoundVolume: 0.5,
   connectedTrackersWarning: true,
-  theme: 'slime',
+  theme: 'void',
   textSize: 12,
   fonts: ['poppins'],
   useTray: null,

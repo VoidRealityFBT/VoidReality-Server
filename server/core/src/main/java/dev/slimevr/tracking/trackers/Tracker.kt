@@ -148,12 +148,8 @@ class Tracker @JvmOverloads constructor(
 	var packetsLost: Int? = null
 	var packetLoss: Float? = null
 	var customName: String? = null
-
-	/**
-	 * Please don't use this and instead set it via [Device.setMag]
-	 */
 	var magStatus: MagnetometerStatus = magStatus
-		internal set
+		private set
 
 	/**
 	 * Watch the rest calibration status
@@ -161,10 +157,20 @@ class Tracker @JvmOverloads constructor(
 	var hasCompletedRestCalibration: Boolean? = null
 
 	/**
+	 * When the tracker last went offline (a sendData status to a non-sendData status), used to
+	 * tell a brief reconnect blip from a real, drift worthy absence for the auto reconnect realign.
+	 */
+	var wentOfflineAtMs: Long = 0L
+
+	/**
 	 * If the tracker has gotten disconnected after it was initialized first time
 	 */
 	var status: TrackerStatus by Delegates.observable(TrackerStatus.DISCONNECTED) { _, old, new ->
 		if (old == new) return@observable
+
+		if (old.sendData && !new.sendData) {
+			wentOfflineAtMs = System.currentTimeMillis()
+		}
 
 		if (allowReset && !old.reset && new.reset && !needReset) {
 			needReset = true
@@ -480,6 +486,20 @@ class Tracker @JvmOverloads constructor(
 	}
 
 	/**
+	 * Feeds a measured angular velocity (radians per second, tracker body frame) from the
+	 * firmware gyro. It is moved into the adjusted frame and handed to the filter, which
+	 * prefers it over the finite-difference estimate for prediction and smoothing.
+	 */
+	fun setAngularVelocity(angularVelocity: Vector3) {
+		val adjusted = if (allowReset && !(isComputed && isInternal) && trackerDataType == TrackerDataType.ROTATION) {
+			resetsHandler.adjustAngularVelocityToReference(angularVelocity)
+		} else {
+			angularVelocity
+		}
+		filteringHandler.setMeasuredAngularVelocity(adjusted)
+	}
+
+	/**
 	 * Sets the derived velocity of the tracker.
 	 */
 	fun setVelocity(vec: Vector3) {
@@ -502,6 +522,17 @@ class Tracker @JvmOverloads constructor(
 	 * For example, flex sensor trackers are not considered as IMU trackers (see TrackerDataType)
 	 */
 	fun isImu(): Boolean = imuType != null && trackerDataType == TrackerDataType.ROTATION
+
+	/**
+	 * Please don't use this and instead set it via [Device.setMag]
+	 */
+	internal fun setMagPrivate(mag: Boolean) {
+		magStatus = if (mag) {
+			MagnetometerStatus.ENABLED
+		} else {
+			MagnetometerStatus.DISABLED
+		}
+	}
 
 	/**
 	 * Gets the magnetic field vector, in mGauss.

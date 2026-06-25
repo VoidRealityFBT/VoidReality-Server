@@ -2,6 +2,8 @@ package dev.slimevr.tracking.processor.stayaligned.trackers
 
 import dev.slimevr.math.Angle
 import dev.slimevr.tracking.processor.stayaligned.StayAlignedDefaults
+import dev.slimevr.tracking.processor.stayaligned.StayAlignedDefaults.RELOCK_YAW_THRESHOLD
+import dev.slimevr.tracking.processor.stayaligned.adjust.LockedErrorVisitor
 import dev.slimevr.tracking.trackers.Tracker
 import io.github.axisangles.ktmath.Quaternion
 
@@ -25,12 +27,25 @@ class StayAlignedTrackerState(
 
 	fun update() {
 		restDetector.update(tracker.getRawRotation())
-		if (restDetector.state == RestDetector.State.AT_REST) {
-			if (lockedRotation == null) {
-				lockedRotation = tracker.getAdjustedRotationForceStayAligned()
+		when (restDetector.state) {
+			RestDetector.State.AT_REST -> {
+				val current = tracker.getAdjustedRotationForceStayAligned()
+				val prev = lockedRotation
+				// Re-lock when first locking, or when the tracker settled at a clearly
+				// different yaw, which is a real pose change. Settling back near the same
+				// yaw keeps the existing baseline so a brief shift does not bake in drift.
+				if (prev == null || LockedErrorVisitor.yawFarFrom(current, prev, RELOCK_YAW_THRESHOLD)) {
+					lockedRotation = current
+				}
 			}
-		} else {
-			lockedRotation = null
+
+			// Keep the baseline through brief movements so settling back after a small
+			// shift re-locks to the original yaw instead of the drifted one
+			RestDetector.State.RECENTLY_AT_REST -> {}
+
+			RestDetector.State.MOVING -> {
+				lockedRotation = null
+			}
 		}
 	}
 

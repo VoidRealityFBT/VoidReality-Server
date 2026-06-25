@@ -94,10 +94,7 @@ export function MagnetometerToggleSetting({
 
   return settingType === 'general' ? (
     <>
-      <div
-        className="flex flex-col pt-5 pb-3 scroll-mt-12 mobile:scroll-mt-20"
-        id={id}
-      >
+      <div className="flex flex-col pt-5 pb-3" id={id}>
         <Typography variant="section-title">
           {l10n.getString(
             'settings-general-tracker_mechanics-use_mag_on_all_trackers'
@@ -109,6 +106,9 @@ export function MagnetometerToggleSetting({
         >
           <Typography whitespace="whitespace-pre-line" />
         </Localized>
+        <Typography color="text-status-warning" whitespace="whitespace-pre-line">
+          {l10n.getString('settings-general-tracker_mechanics-use_mag-requirements')}
+        </Typography>
       </div>
       <CheckBox
         variant="toggle"

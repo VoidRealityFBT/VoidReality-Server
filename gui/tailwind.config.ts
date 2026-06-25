@@ -163,6 +163,24 @@ const colors = {
     200: '#5B1B3A',
     300: '#FFCCE5',
   },
+  'void-background': {
+    100: '#fafafa',
+    200: '#d4d4d4',
+    300: '#a3a3a3',
+    400: '#737373',
+    500: '#333333',
+    600: '#232323',
+    700: '#151515',
+    800: '#0a0a0a',
+    900: '#000000',
+  },
+  'void-accent': {
+    100: '#a3a3a3',
+    200: '#525252',
+    500: '#404040',
+    700: '#262626',
+    900: '#171717',
+  },
 };
 
 const config = {
@@ -285,6 +303,7 @@ const config = {
         },
       },
       backgroundImage: {
+        void: `linear-gradient(135deg, ${colors['void-background'][100]} 50%, ${colors['void-background'][800]} 50% 100%)`,
         slime: `linear-gradient(135deg, ${colors.purple[100]} 50%, ${colors['blue-gray'][700]} 50% 100%)`,
         'slime-green': `linear-gradient(135deg, ${colors['green-accent'][100]} 50%, ${colors['green-background'][700]} 50% 100%)`,
         'slime-yellow': `linear-gradient(135deg, ${colors['yellow-accent'][100]} 50%, ${colors['yellow-background'][700]} 50% 100%)`,

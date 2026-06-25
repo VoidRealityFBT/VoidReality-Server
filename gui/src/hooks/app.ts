@@ -4,6 +4,8 @@ import {
   DataFeedUpdateT,
   ResetResponseT,
   RpcMessage,
+  SettingsRequestT,
+  SettingsResponseT,
   StartDataFeedT,
 } from 'solarxr-protocol';
 import { handleResetSounds } from '@/sounds/sounds';
@@ -11,26 +13,41 @@ import { useConfig } from './config';
 import { useBonesDataFeedConfig, useDataFeedConfig } from './datafeed-config';
 import { useWebsocketAPI } from './websocket-api';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { bonesAtom, datafeedAtom, devicesAtom } from '@/store/app-store';
+import {
+  bonesAtom,
+  datafeedAtom,
+  devicesAtom,
+  fallbackEnabledAtom,
+  lastResetTimeAtom,
+} from '@/store/app-store';
+import { recordDriftSamples } from '@/store/drift-history';
+import { recordNetworkEvents } from '@/store/network-events';
 import { getSentryOrCompute, updateSentryContext } from '@/utils/sentry';
 import { fetchCurrentFirmwareRelease, FirmwareRelease } from './firmware-update';
 import { DEFAULT_LOCALE, LangContext } from '@/i18n/config';
 
-const isSteam = window.electronAPI ? await window.electronAPI.isSteam() : false;
+const isSteam = await window.electronAPI.isSteam();
 
 export interface AppContext {
   currentFirmwareRelease: FirmwareRelease | null;
 }
 
 export function useProvideAppContext(): AppContext {
-  const { useRPCPacket, sendDataFeedPacket, useDataFeedPacket, isConnected } =
-    useWebsocketAPI();
+  const {
+    useRPCPacket,
+    sendRPCPacket,
+    sendDataFeedPacket,
+    useDataFeedPacket,
+    isConnected,
+  } = useWebsocketAPI();
   const { changeLocales } = useContext(LangContext);
   const { config } = useConfig();
   const { dataFeedConfig } = useDataFeedConfig();
   const bonesDataFeedConfig = useBonesDataFeedConfig();
   const setDatafeed = useSetAtom(datafeedAtom);
   const setBones = useSetAtom(bonesAtom);
+  const setFallbackEnabled = useSetAtom(fallbackEnabledAtom);
+  const setLastResetTime = useSetAtom(lastResetTimeAtom);
   const devices = useAtomValue(devicesAtom);
 
   const [currentFirmwareRelease, setCurrentFirmwareRelease] =
@@ -41,12 +58,22 @@ export function useProvideAppContext(): AppContext {
       const startDataFeed = new StartDataFeedT();
       startDataFeed.dataFeeds = [dataFeedConfig, bonesDataFeedConfig];
       sendDataFeedPacket(DataFeedMessage.StartDataFeed, startDataFeed);
+      sendRPCPacket(RpcMessage.SettingsRequest, new SettingsRequestT());
     }
   }, [isConnected, config?.debug, config?.devSettings?.fastDataFeed]);
+
+  useRPCPacket(RpcMessage.SettingsResponse, (res: SettingsResponseT) => {
+    // Only an explicit value overrides the "on-by-default", so an older server that does
+    // not carry the field keeps fallback on rather than reading the absent field as off
+    const fallback = res.modelSettings?.toggles?.fallbackTracking;
+    if (fallback != null) setFallbackEnabled(fallback);
+  });
 
   useDataFeedPacket(DataFeedMessage.DataFeedUpdate, (packet: DataFeedUpdateT) => {
     if (packet.index === 0) {
       setDatafeed(packet);
+      recordDriftSamples(packet);
+      recordNetworkEvents(packet);
     } else if (packet.index === 1) {
       setBones(packet.bones);
     }
@@ -57,6 +84,8 @@ export function useProvideAppContext(): AppContext {
   }, [devices]);
 
   useRPCPacket(RpcMessage.ResetResponse, (resetResponse: ResetResponseT) => {
+    // A reset clears accumulated drift, so the reminder timer restarts from now.
+    setLastResetTime(Date.now());
     if (!config?.feedbackSound) return;
     handleResetSounds(config?.feedbackSoundVolume ?? 1, resetResponse);
   });

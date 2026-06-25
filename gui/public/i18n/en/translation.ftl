@@ -7,15 +7,15 @@
 ## Websocket (server) status
 websocket-connecting = Loading...
 websocket-connection_lost = The server crashed!
-websocket-connection_lost-desc = It looks like the SlimeVR server crashed. Check the logs and restart the program.
+websocket-connection_lost-desc = It looks like the VoidReality server crashed. Check the logs and restart the program.
 websocket-timedout = Could not connect to the server
-websocket-timedout-desc = It looks like the SlimeVR server crashed or timed out. Check the logs and restart the program.
-websocket-error-close = Exit SlimeVR
+websocket-timedout-desc = It looks like the VoidReality server crashed or timed out. Check the logs and restart the program.
+websocket-error-close = Exit VoidReality
 websocket-error-logs = Open the logs Folder
 
 ## Update notification
 version_update-title = New version available: { $version }
-version_update-description = Clicking "{ version_update-update }" will download the SlimeVR installer for you.
+version_update-description = Clicking "{ version_update-update }" will download the VoidReality installer for you.
 version_update-update = Update
 version_update-close = Close
 
@@ -24,7 +24,7 @@ tips-find_tracker = Not sure which tracker is which? Shake a tracker and it will
 tips-do_not_move_heels = Ensure your heels do not move during recording!
 tips-file_select = Drag & drop files to use, or <u>browse</u>.
 tips-tap_setup = You can slowly tap your tracker 2 times to choose it instead of selecting it from the menu.
-tips-turn_on_tracker = Using official SlimeVR trackers? Don't forget to <b><em>turn on your tracker</em></b> after connecting it to the PC!
+tips-turn_on_tracker = Using official VoidReality trackers? Don't forget to <b><em>turn on your tracker</em></b> after connecting it to the PC!
 tips-failed_webgl = Failed to initialize WebGL.
 
 ## Units
@@ -95,9 +95,9 @@ board_type-WROOM32 = WROOM32
 board_type-WEMOSD1MINI = Wemos D1 Mini
 board_type-TTGO_TBASE = TTGO T-Base
 board_type-ESP01 = ESP-01
-board_type-SLIMEVR = SlimeVR
-board_type-SLIMEVR_DEV = SlimeVR Dev Board
-board_type-SLIMEVR_V1_2 = SlimeVR v1.2
+board_type-SLIMEVR = VoidReality
+board_type-SLIMEVR_DEV = VoidReality Dev Board
+board_type-SLIMEVR_V1_2 = VoidReality v1.2
 board_type-LOLIN_C3_MINI = Lolin C3 Mini
 board_type-BEETLE32C3 = Beetle ESP32-C3
 board_type-ESP32C3DEVKITM1 = Espressif ESP32-C3 DevKitM-1
@@ -108,12 +108,12 @@ board_type-WEMOSWROOM02 = Wemos Wroom-02 D1 Mini
 board_type-XIAO_ESP32C3 = Seeed Studio XIAO ESP32C3
 board_type-HARITORA = Haritora
 board_type-ESP32C6DEVKITC1 = Espressif ESP32-C6 DevKitC-1
-board_type-GLOVE_IMU_SLIMEVR_DEV = SlimeVR Dev IMU Glove
+board_type-GLOVE_IMU_SLIMEVR_DEV = VoidReality Dev IMU Glove
 board_type-GESTURES = Gestures
 board_type-ESP32S3_SUPERMINI = ESP32-S3 Supermini
 board_type-GENERIC_NRF = Generic nRF
-board_type-SLIMEVR_BUTTERFLY_DEV = SlimeVR Dev Butterfly
-board_type-SLIMEVR_BUTTERFLY = SlimeVR Butterfly
+board_type-SLIMEVR_BUTTERFLY_DEV = VoidReality Dev Butterfly
+board_type-SLIMEVR_BUTTERFLY = VoidReality Butterfly
 
 ## Proportions
 skeleton_bone-NONE = None
@@ -330,6 +330,10 @@ tracker-status-disconnected = Disconnected
 tracker-status-occluded = Occluded
 tracker-status-ok = OK
 tracker-status-timed_out = Timed out
+tracker-status-dead = Dead
+tracker-status-off = Off
+tracker-status-fallback = Fallback mode
+tracker-status-fallback-estimate = Estimated { $rot }
 
 ## Tracker status columns
 tracker-table-column-name = Name
@@ -339,6 +343,7 @@ tracker-table-column-ping = Ping
 tracker-table-column-packet_loss = Packet Loss
 tracker-table-column-tps = TPS
 tracker-table-column-temperature = Temp. °C
+tracker-table-column-drift = Drift deg/min
 tracker-table-column-linear-acceleration = Accel. X/Y/Z
 tracker-table-column-rotation = Rotation X/Y/Z
 tracker-table-column-position = Position X/Y/Z
@@ -369,6 +374,7 @@ tracker-infos-data_support = Data support
 tracker-infos-imu = IMU Sensor
 tracker-infos-board_type = Main board
 tracker-infos-network_version = Protocol Version
+tracker-infos-drift_rate = Yaw drift deg/min
 tracker-infos-magnetometer = Magnetometer
 tracker-infos-magnetometer-status-v1 = { $status ->
     *[NOT_SUPPORTED] Not supported
@@ -406,7 +412,7 @@ tracker-settings-name_section-description = Give it a cute nickname :)
 tracker-settings-name_section-placeholder = NightyBeast's left leg
 tracker-settings-name_section-label = Tracker name
 tracker-settings-forget = Forget tracker
-tracker-settings-forget-description = Removes the tracker from the SlimeVR Server and prevents it from connecting until the server is restarted. The configuration of the tracker won't be lost.
+tracker-settings-forget-description = Removes the tracker from the VoidReality Server and prevents it from connecting until the server is restarted. The configuration of the tracker won't be lost.
 tracker-settings-forget-label = Forget tracker
 tracker-settings-update-unavailable-v2 = No releases found
 tracker-settings-update-incompatible = Cannot update. Incompatible board or firmware version
@@ -491,6 +497,7 @@ settings-sidebar-osc_router = OSC router
 settings-sidebar-osc_trackers = VRChat OSC Trackers
 settings-sidebar-osc_vmc = VMC
 settings-sidebar-utils = Utilities
+settings-sidebar-network = Network
 settings-sidebar-serial = Serial console
 settings-sidebar-appearance = Appearance
 settings-sidebar-home = Home Screen
@@ -525,7 +532,7 @@ settings-general-steamvr-trackers-tracker_toggling = Automatic tracker assignmen
 settings-general-steamvr-trackers-tracker_toggling-description = Automatically handles toggling SteamVR trackers on or off depending on your current tracker assignments.
 settings-general-steamvr-trackers-tracker_toggling-label = Automatic tracker assignment
 settings-general-steamvr-trackers-hands-warning = <b>Warning:</b> Enabling the SteamVR hand trackers will disable inputs from real controllers.
-    This should only be enabled if you are using SlimeVR for hand tracking.
+    This should only be enabled if you are using VoidReality for hand tracking.
 
     Are you sure you want to do this?
 settings-general-steamvr-trackers-hands-warning-cancel = Cancel
@@ -580,6 +587,9 @@ settings-general-tracker_mechanics-use_mag_on_all_trackers-description =
     Uses magnetometer on all trackers that have a compatible firmware for it, reducing drift in stable magnetic environments.
     Can be disabled per tracker in the tracker's settings. <b>Please don't shutdown any of the trackers while toggling this!</b>
 settings-general-tracker_mechanics-use_mag_on_all_trackers-label = Use magnetometer on trackers
+settings-general-tracker_mechanics-use_mag-requirements =
+    Requirements and warning. The magnetometer only works on a tracker whose IMU actually has a magnetometer, most do not. It must be calibrated and kept away from metal, motors and electronics, a bad calibration drifts worse than no magnetometer at all.
+    On the current firmware, turning this on starts reading the magnetometer but does not yet feed it into the orientation fusion, so it does not change tracking yet. It is experimental and still needs to be finished and validated on real magnetometer hardware.
 settings-general-tracker_mechanics-trackers_over_usb = Trackers over USB
 settings-general-tracker_mechanics-trackers_over_usb-description =
     Enables receiving HID tracker data over USB. Make sure connected trackers have <b>connection over HID</b> enabled!
@@ -592,6 +602,7 @@ settings-stay_aligned-setup-description = You must complete "Setup Stay Aligned"
 settings-stay_aligned-warnings-drift_compensation = ⚠ Please turn off Drift Compensation! Drift Compensation will conflict with Stay Aligned.
 settings-stay_aligned-enabled-label = Adjust trackers
 settings-stay_aligned-hide_yaw_correction-label = Hide adjustment (to compare with no Stay Aligned)
+settings-stay_aligned-pause_when_not_upright-label = Pause when lying down or in unusual poses
 settings-stay_aligned-general-label = General
 settings-stay_aligned-relaxed_poses-label = Relaxed Poses
 settings-stay_aligned-relaxed_poses-description = Stay Aligned uses your relaxed poses to keep the trackers aligned. Use "Setup Stay Aligned" to update these poses.
@@ -739,7 +750,7 @@ settings-general-interface-feedback_sound-description = This option plays a soun
 settings-general-interface-feedback_sound-label = Feedback sound
 settings-general-interface-feedback_sound-volume = Feedback sound volume
 settings-general-interface-connected_trackers_warning = Connected trackers warning
-settings-general-interface-connected_trackers_warning-description = This option will show a pop-up every time you try exiting SlimeVR while having one or more connected trackers. It reminds you to turn off your trackers when you are done to preserve battery life.
+settings-general-interface-connected_trackers_warning-description = This option will show a pop-up every time you try exiting VoidReality while having one or more connected trackers. It reminds you to turn off your trackers when you are done to preserve battery life.
 settings-general-interface-connected_trackers_warning-label = Connected trackers warning on exit
 
 ## Behavior settings
@@ -748,10 +759,10 @@ settings-general-interface-dev_mode = Developer Mode
 settings-general-interface-dev_mode-description = This mode can be useful if you need in-depth data or need to interact with connected trackers on a more advanced level.
 settings-general-interface-dev_mode-label = Developer Mode
 settings-general-interface-use_tray = Minimize to system tray
-settings-general-interface-use_tray-description = Lets you close the window without closing the SlimeVR Server so you can continue using it without having the GUI bother you.
+settings-general-interface-use_tray-description = Lets you close the window without closing the VoidReality Server so you can continue using it without having the GUI bother you.
 settings-general-interface-use_tray-label = Minimize to system tray
 settings-general-interface-discord_presence = Share activity on Discord
-settings-general-interface-discord_presence-description = Tells your Discord client that you are using SlimeVR along with the number of IMU trackers you are using.
+settings-general-interface-discord_presence-description = Tells your Discord client that you are using VoidReality along with the number of IMU trackers you are using.
 settings-general-interface-discord_presence-label = Share activity on Discord
 settings-general-interface-discord_presence-message = { $amount ->
     [0] Sliming around
@@ -762,9 +773,9 @@ settings-interface-behavior-error_tracking = Error collection via Sentry.io
 settings-interface-behavior-error_tracking-description_v2 =
     <h1>Do you consent to the collection of anonymized error data?</h1>
 
-    <b>We do not collect personal information</b> such as your IP address or wireless credentials. SlimeVR values your privacy!
+    <b>We do not collect personal information</b> such as your IP address or wireless credentials. VoidReality values your privacy!
 
-    To provide the best user experience, we collect anonymized error reports, performance metrics, and operating system information. This helps us detect bugs and issues with SlimeVR. These metrics are collected via Sentry.io.
+    To provide the best user experience, we collect anonymized error reports, performance metrics, and operating system information. This helps us detect bugs and issues with VoidReality. These metrics are collected via Sentry.io.
 
 settings-interface-behavior-error_tracking-label = Send errors to developers
 settings-interface-behavior-bvh_directory = Directory to save BVH recordings
@@ -790,12 +801,6 @@ settings-serial-factory_reset-warning-cancel = Cancel
 settings-serial-serial_select = Select a serial port
 settings-serial-auto_dropdown_item = Auto
 settings-serial-get_wifi_scan = Get WiFi Scan
-settings-serial-enter_pairing = Enter Pairing
-settings-serial-exit_pairing = Exit Pairing
-settings-serial-calibrate = Calibrate
-settings-serial-six_side_calibrate = 6-Side Calibrate
-settings-serial-dfu = Enter DFU
-settings-serial-meow = Meow!
 settings-serial-file_type = Plain text
 settings-serial-save_logs = Save To File
 settings-serial-send_command = Send
@@ -818,7 +823,7 @@ settings-osc-router-network = Network ports
 # This cares about multilines
 settings-osc-router-network-description =
     Set the ports for listening and sending data.
-    These can be the same as other ports used in the SlimeVR server.
+    These can be the same as other ports used in the VoidReality server.
 settings-osc-router-network-port_in =
     .label = Port In
     .placeholder = Port in (default: 9002)
@@ -870,7 +875,7 @@ settings-osc-vmc = Virtual Motion Capture
 # This cares about multilines
 settings-osc-vmc-description =
     Change settings specific to the VMC (Virtual Motion Capture) protocol
-    to send SlimeVR's bone data and receive bone data from other apps.
+    to send VoidReality's bone data and receive bone data from other apps.
 settings-osc-vmc-enable = Enable
 settings-osc-vmc-enable-description = Toggle the sending and receiving of data.
 settings-osc-vmc-enable-label = Enable
@@ -900,6 +905,48 @@ settings-osc-vmc-mirror_tracking-label = Mirror tracking
 settings-osc-common-network-ports_match_error = The OSC Router in and out ports can't be the same!
 settings-osc-common-network-port_banned_error = The port { $port } can't be used!
 
+## Network settings
+
+settings-network = Network
+settings-network-description = Live 2.4 GHz networking status for your trackers (Signal is their WiFi RSSI), a per-tracker lag/health readout, and a log of when each tracker disconnected or reconnected and why.
+settings-network-summary-connected = Connected
+settings-network-summary-lagging = Lagging
+settings-network-summary-avg_ping = Average ping
+settings-network-summary-worst_loss = Worst packet loss
+settings-network-summary-events = Logged events
+settings-network-diagnostics = Diagnostics
+settings-network-diagnostics-run = Run diagnostics
+settings-network-diagnostics-hint = Measure your trackers and 2.4 GHz link: signal, ping, packet loss, update rate, temperature, battery, and how often each tracker has dropped this session. Run it while things are acting up for the truest numbers.
+settings-network-trackers = Trackers
+settings-network-no_trackers = No network trackers connected.
+settings-network-col-tracker = Tracker
+settings-network-col-health = Connection
+settings-network-col-status = Status
+settings-network-col-ping = Ping
+settings-network-col-signal = Signal
+settings-network-col-loss = Loss
+settings-network-col-packets = Lost / Recv
+settings-network-col-tps = TPS
+settings-network-health-good = Good
+settings-network-health-lagging = Lagging
+settings-network-health-bad = Bad
+settings-network-status-none = Unknown
+settings-network-status-disconnected = Disconnected
+settings-network-status-ok = Connected
+settings-network-status-busy = Busy
+settings-network-status-error = Error
+settings-network-status-occluded = Occluded
+settings-network-status-timed_out = Timed out
+settings-network-events = Connection log
+settings-network-events-clear = Clear
+settings-network-event-timed_out = Timed out
+settings-network-event-disconnected = Disconnected
+settings-network-event-error = Error
+settings-network-event-occluded = Occluded
+settings-network-event-no_data = Lost data (no packets)
+settings-network-event-reconnected = Reconnected
+settings-network-no_events = No disconnects this session.
+
 ## Advanced settings
 settings-utils-advanced = Advanced
 
@@ -923,10 +970,10 @@ settings-utils-advanced-reset_warning-reset = Reset settings
 settings-utils-advanced-reset_warning-cancel = Cancel
 
 settings-utils-advanced-open_data-v1 = Config folder
-settings-utils-advanced-open_data-description-v1 = Open SlimeVR's config folder in file explorer, containing the configuration
+settings-utils-advanced-open_data-description-v1 = Open VoidReality's config folder in file explorer, containing the configuration
 settings-utils-advanced-open_data-label = Open folder
 settings-utils-advanced-open_logs = Logs folder
-settings-utils-advanced-open_logs-description = Open SlimeVR's logs folder in file explorer, containing the logs of the app
+settings-utils-advanced-open_logs-description = Open VoidReality's logs folder in file explorer, containing the logs of the app
 settings-utils-advanced-open_logs-label = Open folder
 
 ## Home Screen
@@ -946,7 +993,7 @@ onboarding-wip = Work in progress
 onboarding-previous_step = Previous step
 onboarding-setup_warning =
     <b>Warning:</b> The initial setup is required for good tracking,
-    it is needed if this is your first time using SlimeVR.
+    it is needed if this is your first time using VoidReality.
 onboarding-setup_warning-skip = Skip setup
 onboarding-setup_warning-cancel = Continue setup
 
@@ -961,15 +1008,15 @@ onboarding-quiz-more_sets_modal-cancel = I want to connect more trackers
 
 onboarding-quiz-slimeset-title = What type of trackers are you connecting?
 onboarding-quiz-slimeset-description = If you have multiple sets, you will be asked again later in the process
-onboarding-quiz-slimeset-official-sets = Official SlimeVR Trackers
+onboarding-quiz-slimeset-official-sets = Official VoidReality Trackers
 onboarding-quiz-slimeset-thirdparty-sets = Third-party or DIY Trackers
-onboarding-quiz-slimeset-answer-regular = SlimeVR V1.0 & V1.2
+onboarding-quiz-slimeset-answer-regular = VoidReality V1.0 & V1.2
 onboarding-quiz-slimeset-answer-butterfly = Butterfly
 onboarding-quiz-slimeset-answer-wifi = WiFi-based Slime
 onboarding-quiz-slimeset-answer-dongle = Dongle-based Slime
 
 onboarding-quiz-usage-title = What are you using your trackers for?
-onboarding-quiz-usage-description = If you plan on using SlimeVR for multiple purposes, you can change the affected settings later.
+onboarding-quiz-usage-description = If you plan on using VoidReality for multiple purposes, you can change the affected settings later.
 onboarding-quiz-usage-answer-VRC = VR Gaming (e.g. VRChat)
 onboarding-quiz-usage-answer-mocap_vtubing = Mocap and VTubing
 
@@ -978,9 +1025,9 @@ onboarding-quiz-runtime-answer-steamvr = SteamVR
 onboarding-quiz-runtime-answer-standalone = Standalone
 
 onboarding-quiz-mocap_preferences-title = Mocap Preferences
-onboarding-quiz-mocap_preferences-desc = Specify how you plan to use SlimeVR for mocap or VTubing
+onboarding-quiz-mocap_preferences-desc = Specify how you plan to use VoidReality for mocap or VTubing
 onboarding-quiz-mocap_preferences-playspace-title = What is your playspace?
-onboarding-quiz-mocap_preferences-playspace-desc = If standing, SlimeVR will try to track walking movement instead of anchoring you in one spot.
+onboarding-quiz-mocap_preferences-playspace-desc = If standing, VoidReality will try to track walking movement instead of anchoring you in one spot.
 onboarding-quiz-mocap_preferences-playspace-sitting = Sitting
 onboarding-quiz-mocap_preferences-playspace-standing = Standing
 onboarding-quiz-mocap_preferences-vrm_model-title = Do you have a VRM model? (Optional)
@@ -997,7 +1044,7 @@ onboarding-wifi_creds-back-v2 = Go back
 onboarding-wifi_creds-v2 = Trackers using Wi-Fi
 # This cares about multilines
 onboarding-wifi_creds-description-v2 =
-    Most trackers (such as official SlimeVR trackers) use Wi-Fi to connect to the server.
+    Most trackers (such as official VoidReality trackers) use Wi-Fi to connect to the server.
     Please use the credentials of the Wi-Fi network your device is currently connected to.
 
     Make sure to use a 2.4GHz Wi-Fi connection for your trackers!
@@ -1044,7 +1091,7 @@ install-info_udev-rules_warning = Access rules via udev are required for serial 
 install-info_udev-rules_modal_button = Close
 install-info_udev-rules_modal-dont-show-again_checkbox = Don't show again
 ## Setup start
-onboarding-home = Welcome to SlimeVR
+onboarding-home = Welcome to VoidReality
 onboarding-home-start = Let's get set up!
 
 
@@ -1079,7 +1126,7 @@ onboarding-connect_serial-error-modal-no_serial_device_found-desc =
     If this does not work:
       - try using a different USB cable
       - try using a different USB port
-      - try reinstalling the SlimeVR server and select "USB Drivers" in the components section
+      - try reinstalling the VoidReality server and select "USB Drivers" in the components section
 # $amount (Number) - Amount of trackers connected (this is a number, but you can use CLDR plural rules for your language)
 # More info on https://www.unicode.org/cldr/cldr-aux/charts/22/supplemental/language_plural_rules.html
 # English in this case only has 2 plural rules, which are "one" and "other",
@@ -1234,7 +1281,7 @@ onboarding-manual_mounting-next = Next step
 ## Tracker automatic mounting setup
 onboarding-automatic_mounting-back = Go back to Enter VR
 onboarding-automatic_mounting-title = Mounting Calibration
-onboarding-automatic_mounting-description = For SlimeVR trackers to work, we need to assign a mounting orientation to your trackers to align them with your physical tracker mounting.
+onboarding-automatic_mounting-description = For VoidReality trackers to work, we need to assign a mounting orientation to your trackers to align them with your physical tracker mounting.
 onboarding-automatic_mounting-manual_mounting = Manual mounting
 onboarding-automatic_mounting-next = Next step
 onboarding-automatic_mounting-prev_step = Previous step
@@ -1274,7 +1321,7 @@ onboarding-manual_proportions-estimated_height = Estimated user height
 ## Tracker automatic proportions setup
 onboarding-automatic_proportions-back = Go back to Manual Proportions
 onboarding-automatic_proportions-title = Measure your body
-onboarding-automatic_proportions-description = For SlimeVR trackers to work, we need to know the length of your bones. This short calibration will measure it for you.
+onboarding-automatic_proportions-description = For VoidReality trackers to work, we need to know the length of your bones. This short calibration will measure it for you.
 onboarding-automatic_proportions-manual = Manual proportions
 onboarding-automatic_proportions-prev_step = Previous step
 
@@ -1287,8 +1334,8 @@ onboarding-automatic_proportions-requirements-title = Requirements
 onboarding-automatic_proportions-requirements-descriptionv2 =
     You have at least enough trackers to track your feet (generally 5 trackers).
     You have your trackers and headset on and are wearing them.
-    Your trackers and headset are connected to the SlimeVR server and are working properly (ex. no stuttering, disconnecting, etc).
-    Your headset is reporting positional data to the SlimeVR server (this generally means having SteamVR running and connected to SlimeVR using SlimeVR's SteamVR driver).
+    Your trackers and headset are connected to the VoidReality server and are working properly (ex. no stuttering, disconnecting, etc).
+    Your headset is reporting positional data to the VoidReality server (this generally means having SteamVR running and connected to VoidReality using VoidReality's SteamVR driver).
     Your tracking is working and is accurately representing your movements (ex. you have performed a full reset and they move the right direction when kicking, bending over, sitting, etc).
 onboarding-automatic_proportions-requirements-next = I have read the requirements
 
@@ -1365,7 +1412,7 @@ onboarding-automatic_proportions-smol_warning-cancel = Go back
 
 ## User height calibration
 onboarding-user_height-title = What is your height?
-onboarding-user_height-description = We need your height to calculate your body proportions and accurately represent your movements. You can either let SlimeVR calculate it, or input your height manually.
+onboarding-user_height-description = We need your height to calculate your body proportions and accurately represent your movements. You can either let VoidReality calculate it, or input your height manually.
 onboarding-user_height-need_head_tracker = A headset and controllers with positional tracking are required to perform the calibration.
 onboarding-user_height-calculate = Calculate my height automatically
 onboarding-user_height-next_step = Continue and save
@@ -1425,6 +1472,7 @@ onboarding-stay_aligned-manual_mounting-done = Done
 
 ## Home
 home-no_trackers = No trackers detected or assigned
+home-no_trackers-restart_hint = If the list is empty after a restart, turn on a tracker to reconnect.
 home-settings = Home Page Settings
 home-settings-close = Close
 
@@ -1432,21 +1480,21 @@ home-settings-close = Close
 trackers_still_on-modal-title = Trackers still on
 trackers_still_on-modal-description =
     One or more trackers are still on.
-    Do you still want to exit SlimeVR?
-trackers_still_on-modal-confirm = Exit SlimeVR
+    Do you still want to exit VoidReality?
+trackers_still_on-modal-confirm = Exit VoidReality
 trackers_still_on-modal-cancel = Hold on...
 
 ## Status system
 status_system-StatusTrackerReset = It is recommended to perform a full reset as one or more trackers are unadjusted.
 status_system-StatusSteamVRDisconnected = { $type ->
-    *[steamvr] Currently not connected to SteamVR via the SlimeVR driver.
-    [steamvr_feeder] Currently not connected to the SlimeVR Feeder App.
+    *[steamvr] Currently not connected to SteamVR via the VoidReality driver.
+    [steamvr_feeder] Currently not connected to the VoidReality Feeder App.
 }
 status_system-StatusTrackerError = The { $trackerName } tracker has an error.
 status_system-StatusUnassignedHMD = The VR headset should be assigned as a head tracker.
 status_system-StatusPublicNetwork = {$count ->
-    [one] Your network profile is currently set to Public ({$adapters}). This is not recommended for SlimeVR to function properly. <PublicFixLink>See how to fix it here.</PublicFixLink>
-    *[many] Some of your network adapters are set to public: {$adapters}. This is not recommended for SlimeVR to function properly. <PublicFixLink>See how to fix it here.</PublicFixLink>
+    [one] Your network profile is currently set to Public ({$adapters}). This is not recommended for VoidReality to function properly. <PublicFixLink>See how to fix it here.</PublicFixLink>
+    *[many] Some of your network adapters are set to public: {$adapters}. This is not recommended for VoidReality to function properly. <PublicFixLink>See how to fix it here.</PublicFixLink>
 }
 
 
@@ -1503,7 +1551,7 @@ firmware_tool-flash_method_step-serial-v2 =
 firmware_tool-flashbtn_step = Press the boot button
 firmware_tool-flashbtn_step-description = Before going to the next step, there are a few things you need to do
 
-firmware_tool-flashbtn_step-board_SLIMEVR = Turn off the tracker, remove the case (if any), connect the USB cable to your computer, then follow the appropriate steps for your SlimeVR board revision:
+firmware_tool-flashbtn_step-board_SLIMEVR = Turn off the tracker, remove the case (if any), connect the USB cable to your computer, then follow the appropriate steps for your VoidReality board revision:
 firmware_tool-flashbtn_step-board_SLIMEVR-r11-v2 = Turn on the tracker while shorting the second rectangular FLASH pad from the edge on the top side of the board to the metal shield of the microcontroller. The tracker LED should do a short blink.
 firmware_tool-flashbtn_step-board_SLIMEVR-r12-v2 = Turn on the tracker while shorting the circular FLASH pad on the top side of the board to the metal shield of the microcontroller. The tracker LED should do a short blink.
 firmware_tool-flashbtn_step-board_SLIMEVR-r14-v2 = Turn on the tracker while pushing in the FLASH button on the top side of the board. The tracker LED should do a short blink.
@@ -1565,7 +1613,7 @@ firmware_update-status-ERROR_UNKNOWN = Unknown error
 ## Dedicated Firmware Update Page
 firmware_update-title = Firmware update
 firmware_update-devices = Available Devices
-firmware_update-devices-description = Please select the trackers you want to update to the latest version of SlimeVR firmware.
+firmware_update-devices-description = Please select the trackers you want to update to the latest version of VoidReality firmware.
 firmware_update-no_devices = Please make sure that the trackers you want to update are ON and connected to the Wi-Fi!
 firmware_update-changelog-title = Updating to {$version}
 firmware_update-looking_for_devices = Looking for devices to update...
@@ -1592,14 +1640,14 @@ tray_or_exit_modal-cancel = Cancel
 ## Unknown device modal
 unknown_device-modal-title = A new tracker was found!
 unknown_device-modal-description = There is a new tracker with MAC address <b>{$deviceId}</b>.
-    Do you want to connect it to SlimeVR?
+    Do you want to connect it to VoidReality?
 unknown_device-modal-confirm = Sure!
 unknown_device-modal-forget = Ignore it
 
 
 # VRChat config warnings
 vrc_config-page-title = VRChat configuration warnings
-vrc_config-page-desc = This page shows the state of your VRChat settings and shows what settings are incompatible with SlimeVR. It is highly recommended that you fix any warnings showing up here for the best user experience with SlimeVR.
+vrc_config-page-desc = This page shows the state of your VRChat settings and shows what settings are incompatible with VoidReality. It is highly recommended that you fix any warnings showing up here for the best user experience with VoidReality.
 vrc_config-page-help = Can't find the settings?
 vrc_config-page-help-desc = Check out our <a>documentation on this topic!</a>
 vrc_config-page-big_menu = Tracking & IK (Big Menu)
@@ -1653,30 +1701,22 @@ error_collection_modal-cancel = I don't want to
 tracking_checklist = Tracking Checklist
 tracking_checklist-settings = Tracking Checklist Settings
 tracking_checklist-settings-close = Close
-tracking_checklist-status-incomplete = You are not prepared to use SlimeVR!
+tracking_checklist-status-incomplete = You are not prepared to use VoidReality!
 tracking_checklist-status-partial = {$count ->
     [one] You have 1 warning!
     *[many] You have {$count} warnings!
 }
-tracking_checklist-status-complete = You are prepared to use SlimeVR!
+tracking_checklist-status-complete = You are prepared to use VoidReality!
 tracking_checklist-MOUNTING_CALIBRATION = Perform a mounting calibration
 tracking_checklist-FEET_MOUNTING_CALIBRATION = Perform a feet mounting calibration
 tracking_checklist-FULL_RESET = Perform a full reset
 tracking_checklist-FULL_RESET-desc = Some trackers need a reset to be performed.
-tracking_checklist-STEAMVR_DISCONNECTED = SteamVR disconnected
+tracking_checklist-STEAMVR_DISCONNECTED = SteamVR not running
 tracking_checklist-STEAMVR_DISCONNECTED-desc = SteamVR is not running. Are you using it for VR?
-tracking_checklist-STEAMVR_DISCONNECTED-driver_blocked-desc = The driver has been blocked by SteamVR due to a previous SteamVR crash.
-tracking_checklist-STEAMVR_DISCONNECTED-driver_disabled-desc = The driver is disabled in SteamVR settings.
-tracking_checklist-STEAMVR_DISCONNECTED-driver_not_installed-desc = The driver is not installed.
 tracking_checklist-STEAMVR_DISCONNECTED-open = Launch SteamVR
-tracking_checklist-STEAMVR_DISCONNECTED-enable = Enable driver
 tracking_checklist-STEAMVR_HANDS_ENABLED = Hand trackers toggled on
 tracking_checklist-STEAMVR_HANDS_ENABLED-desc = You have enabled the SteamVR virtual hand trackers. This will cause button inputs to not work in SteamVR and in games.
 tracking_checklist-STEAMVR_HANDS_ENABLED-go = Disable them
-tracking_checklist-STANDABLE_INSTALLED = Standable is installed
-tracking_checklist-STANDABLE_INSTALLED-desc =
-    Standable frequently causes tracking issues when used alongside SlimeVR. Standable should be fully uninstalled in Steam to ensure no issues arise.
-    You must close SteamVR before uninstalling Standable in Steam.
 tracking_checklist-TRACKERS_REST_CALIBRATION = Calibrate your trackers
 tracking_checklist-TRACKERS_REST_CALIBRATION-desc = You didn't perform tracker calibration. Please let your trackers (highlighted in yellow) rest on a stable surface for a few seconds.
 tracking_checklist-TRACKER_ERROR = Trackers with Errors
@@ -1689,11 +1729,11 @@ tracking_checklist-UNASSIGNED_HMD-desc = The VR headset should be assigned as a 
 tracking_checklist-NETWORK_PROFILE_PUBLIC = Change your network profile
 tracking_checklist-NETWORK_PROFILE_PUBLIC-desc = {$count ->
     [one] Your network profile is currently set to Public ({$adapters}).
-          This is not recommended for SlimeVR to function properly.
+          This is not recommended for VoidReality to function properly.
           <PublicFixLink>See how to fix it here.</PublicFixLink>
     *[many] Some of your network adapters are set to public:
             {$adapters}
-            This is not recommended for SlimeVR to function properly.
+            This is not recommended for VoidReality to function properly.
             <PublicFixLink>See how to fix it here.</PublicFixLink>
 }
 tracking_checklist-NETWORK_PROFILE_PUBLIC-open = Open Control Panel
@@ -1714,3 +1754,147 @@ toolbar-mounting_calibration-fingers = Fingers
 toolbar-drift_reset = Drift Reset
 toolbar-assigned_trackers = {$count} trackers assigned
 toolbar-unassigned_trackers = {$count} trackers unassigned
+home-drift_summary = Session drift deg/min
+home-drift_summary-average = Average
+home-drift_summary-worst = Worst
+home-drift_summary-measured = Measured
+home-reset_reminder-title = Drift building up
+home-reset_reminder-detail = { $tracker } has drifted about { $degrees }° since your last reset. A full reset will straighten it out.
+home-reset_reminder-dismiss = Dismiss
+tracker-infos-drift_chart = Drift per reset deg/min
+tracker-infos-drift_chart-resets = { $amount } resets measured
+tracker-card-drift = Drift
+tracker-card-drift-tooltip = Yaw drift per minute, measured at each reset. Green is under 1, yellow 1 to 3, red over 3. Lower is better.
+tracker-card-drift-tooltip-temp = Temperature: { $temp } C
+tracker-table-expanded-open_settings = Open tracker settings
+tracker-table-expanded-drift_hint = Do 2 yaw resets 60s apart to measure
+settings-general-fk_settings-fallback = Fallback tracking
+settings-general-fk_settings-fallback-description = When a tracker stops sending data, estimate that limb from its live parent instead of freezing it at the last pose.
+settings-general-fk_settings-fallback-enabled = Estimate lost trackers from parent
+home-stay_aligned-active = Stay Aligned active
+home-stay_aligned-correction = Total correction deg
+home-stay_aligned-locked = Locked
+diagnostics-title = Tracking Diagnostics
+diagnostics-description = Per tracker drift, temperature, alignment and connection health for this session. Click a tracker to open its settings.
+diagnostics-no_trackers = No IMU trackers connected.
+diagnostics-drift = Drift deg/min
+diagnostics-stability = Stability ±deg/min
+diagnostics-temp = Temp C
+diagnostics-stay_aligned = Stay Aligned
+diagnostics-ping = Ping
+diagnostics-packet_loss = Packet loss
+diagnostics-battery = Battery
+diagnostics-quality = Calibration quality
+diagnostics-quality-measuring = Measuring
+diagnostics-quality-good = Good
+diagnostics-quality-fair = Fair
+diagnostics-quality-poor = Poor
+diagnostics-quality-advice-ok = Tracking well, no action needed.
+diagnostics-quality-advice-battery = Low battery is the likely cause, charge this tracker.
+diagnostics-quality-advice-hot = Running hot, let it cool then do a full reset.
+diagnostics-quality-advice-wifi = High packet loss, fix WiFi before recalibrating.
+diagnostics-quality-advice-recalibrate = Drifting a lot, a full reset should help.
+settings-general-steamvr-trackers-emulate_all-label = Emulate all trackers (20 point)
+settings-general-steamvr-trackers-emulate_all-description = Sends a tracker for every body part, estimating the ones you have no physical tracker for. Turns off automatic toggling while on.
+settings-general-steamvr-trackers-emulate_all-requirement = For emulated legs to track well, put a foot or ankle tracker on each leg. Elbows are solved from your controllers and work without leg trackers.
+navbar-emulated = Emulated
+emulated-title = Emulated Trackers
+emulated-open_settings = Settings
+emulated-description = { $emulated } of { $total } body parts are estimated, the rest come from physical trackers.
+emulated-none = No body trackers yet.
+emulated-badge-emulated = Emulated
+emulated-badge-real = Real
+settings-sidebar-emulated = Emulated
+settings-sidebar-emulated_trackers = Emulated trackers
+settings-sidebar-updates = Updates
+settings-emulated = Emulated Trackers
+settings-emulated-description =
+    Emulated trackers fill in body parts you have no physical tracker for. They are estimated from the trackers you do have and sent as their own trackers, so you reach more tracking points than you own. Toggle them fully on or off here.
+    Elbows are solved from your controllers, the same way the controllers anchor your hands, so they bend with the controllers and need no leg trackers. Emulated legs are estimated from your body trackers, so a foot or ankle tracker on each leg makes the legs track properly instead of dangling from the hip.
+    This is different from fallback tracking: fallback only steps in when a physical tracker dies, temporarily feeding that tracker's output from an estimate until it comes back. Fallback lives under Tracker Mechanics, not here.
+settings-emulated-enable = Emulate all trackers
+settings-emulated-enable-description = Sends a tracker for every body part, estimating the ones without a physical tracker. Also enables the VRChat OSC roles so they reach VRChat directly, bypassing SteamVR.
+settings-emulated-enable-label = Emulate all trackers (20 point)
+settings-emulated-requirement = Below knee trackers detected: { $count }. Two or more let the emulated legs track properly. Elbows work from your controllers regardless.
+settings-emulated-straight_leg = Straight leg estimation
+settings-emulated-straight_leg-description =
+    For an emulated thigh with a tracked shin or ankle, aligns the thigh with the shin so the leg follows it as one segment instead of hanging from the hip.
+    Looks right standing and walking, approximate when the knee is bent. Only affects emulated legs.
+settings-emulated-straight_leg-label = Straight leg estimation
+toolbar-emulated_trackers = { $count } emulated { $count ->
+    [one] tracker
+   *[other] trackers
+}
+home-tracker_logs = Tracker logs ({ $count })
+home-tracker_logs-copy = Copy
+
+## Update system
+
+updates-title = Updates available
+updates-no_notes = No release notes.
+updates-app-heading = App update
+updates-firmware-heading = Firmware update
+updates-opt_out = Opt out
+updates-update = Update
+updates-firmware-choose = Choose how to update the trackers.
+updates-firmware-wired = Wired update
+updates-firmware-wireless = Wireless update
+updates-notification-title = VoidReality update available
+updates-notification-body = A new version is ready. Open VoidReality to see what changed.
+
+updates-flow-title = Update trackers
+updates-flow-info =
+    This downloads the new firmware and flashes each tracker over WiFi, one at a time.
+    Keep your trackers on and within WiFi range. Each tracker drops out for under a minute while it reflashes and reboots, then comes back on its own. Fallback tracking keeps that body part going during the drop, so you do not have to stop.
+    Do not power a tracker off while it is flashing.
+updates-flow-select = Trackers to flash
+updates-flow-select-all = Select all
+updates-flow-select-none = Select none
+updates-flow-mixed_boards = The selected trackers are different boards ({ $boards }). One firmware file only fits one board, so flash one board at a time.
+updates-flow-board_mismatch = That file is built for { $file }, but the selected tracker is { $tracker }. Flashing it could brick the tracker, so it was blocked. Pick the file for { $tracker }.
+updates-flow-start = Start wireless update
+updates-flow-local = Flash a custom .bin
+updates-flow-wired = Update over USB instead
+updates-flow-cancel = Cancel
+updates-flow-close = Close
+updates-flow-updating = Updating...
+updates-flow-none = No trackers to update.
+updates-flow-no_firmware = No matching firmware in the release for: { $trackers }. They were skipped.
+updates-flow-log-empty = No log yet.
+updates-flow-status-waiting = Waiting
+updates-flow-status-working = Working
+updates-flow-status-downloading = Downloading firmware
+updates-flow-status-authenticating = Authenticating
+updates-flow-status-uploading = Uploading to tracker
+updates-flow-status-syncing = Syncing with tracker
+updates-flow-status-rebooting = Rebooting
+updates-flow-status-provisioning = Provisioning
+updates-flow-status-manual_reboot = Needs a manual reboot
+updates-flow-status-done = Done
+updates-flow-error-not_found = Failed, tracker not found on the network
+updates-flow-error-timeout = Failed, the tracker timed out
+updates-flow-error-download = Failed, could not download the firmware
+updates-flow-error-auth = Failed, OTA authentication was rejected
+updates-flow-error-upload = Failed, the upload to the tracker failed
+updates-flow-error-provisioning = Failed, provisioning the tracker failed
+updates-flow-error-method = Failed, this tracker does not support this update method
+updates-flow-error-unknown = Failed, unknown error
+
+settings-updates = Updates
+settings-updates-description = Update checking, the stock mode switch, and firmware update options live here.
+settings-updates-stock_mode = Stock mode
+settings-updates-stock_mode-description =
+    Stock mode turns off the VoidReality runtime features (fallback tracking and straight leg estimation) so the server behaves like plain SlimeVR, with no reflash needed.
+    The firmware build-flag features still need a reflash to undo, see the firmware revert below.
+settings-updates-stock_mode-label = Stock mode (behave like plain SlimeVR)
+settings-updates-firmware = Firmware update
+settings-updates-firmware-description =
+    Flash firmware opens the update flow, where you can flash the latest release, flash a custom .bin you built yourself, or update over USB. It pushes firmware to the trackers over WiFi, one at a time.
+    Open firmware tool goes to the USB flashing tool directly.
+settings-updates-firmware-wired = Open firmware tool
+settings-updates-firmware-flash = Flash firmware
+settings-updates-revert = Revert to stock firmware
+settings-updates-revert-description =
+    Flash a tracker back to the official SlimeVR firmware, or to a VoidReality stock build for boards SlimeVR does not prebuild. Use this if an update goes wrong or you want a clean stock image.
+    For now this opens the firmware tool, where you can flash a stock binary over USB. Wireless revert lands with the wireless update.
+settings-updates-revert-button = Open firmware tool

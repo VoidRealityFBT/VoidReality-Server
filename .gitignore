@@ -1,49 +1,39 @@
-# Ignore Gradle project-specific cache directory
-.gradle
+# Dependencies
+node_modules/
+.pnp.*
 
-# Syncthing ignore file
-.stignore
-
-# Ignore .idea
-.idea
-
-# Ignore .fleet
-.fleet
-
-# Ignore eclipse stuff
-.project
-.classpath
-.settings
-
-# VSCode stuff
-/.vscode/settings.json
-/.vscode/launch.json
-
-# Ignore eclipse stuff
-.project
-.classpath
-.settings
-
-# Node Stuff
-/node_modules
-.husky
-
-# kotlin stuff
-/.kotlin
-
-# ignore gradle build folder
+# Build output (Gradle, GUI, Electron, generated protocol dist)
 build/
+out/
+dist/
+dist-electron/
+release/
+Release/
+solarxr-protocol/protocol/typescript/dist/
 
-# direnv has been claimed for Nix usage
-.direnv/
-.devenv
+# Gradle
+.gradle/
 
-# Ignore Android local properties
-local.properties
+# Caches
+.vite/
+.cache/
+*.tsbuildinfo
 
-# Ignore temporary config
-vrconfig.yml.tmp
+# Logs
+*.log
+logs/
 
+# Env / local
+.env
+.env.*
+*.local
 
-# Nixos
-.bin/
+# IDE / editor
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -9,16 +9,16 @@
 
 websocket-connecting = Įkeliama...
 websocket-connection_lost = Įvyko techninė klaida!
-websocket-connection_lost-desc = Panašu, kad įvyko techninė klaida SlimeVR serveryje. Patikrinkite log'us ir bandykite jį perkrauti.
+websocket-connection_lost-desc = Panašu, kad įvyko techninė klaida VoidReality serveryje. Patikrinkite log'us ir bandykite jį perkrauti.
 websocket-timedout = Nepavyko susisiekti su serveriu
-websocket-timedout-desc = Panašu, kad SlimeVR serveris užstrigo. Patikrinkite log'us ir bandykite jį perkrauti.
-websocket-error-close = Uždaryti SlimeVR
+websocket-timedout-desc = Panašu, kad VoidReality serveris užstrigo. Patikrinkite log'us ir bandykite jį perkrauti.
+websocket-error-close = Uždaryti VoidReality
 websocket-error-logs = Atidaryti log'ų aplanką
 
 ## Update notification
 
 version_update-title = Yra nauja versija: { $version }
-version_update-description = Paspaudus „{ version_update-update }“, bus atsiųstas SlimeVR diegiklis.
+version_update-description = Paspaudus „{ version_update-update }“, bus atsiųstas VoidReality diegiklis.
 version_update-update = Atnaujinti
 version_update-close = Atmesti
 
@@ -28,7 +28,7 @@ tips-find_tracker = Neaiškų, kuris sekiklis yra kuris? Pakratykite vieną - at
 tips-do_not_move_heels = Įrašymo metu pasirūpinkite, kad kulnai nejudėtų!
 tips-file_select = Tempkite failus čia, arba <u>pasirinkite</u> rankiniu būdu.
 tips-tap_setup = Vietoj pasirinkimo iš meniu, galite du kartus švelniai bakstelėti sekiklį, kad jį pasirinkti.
-tips-turn_on_tracker = Naudojate oficialius SlimeVR sekiklius? Nepamirškite <b><em>įjungti juos</em></b> po prijungimo prie kompiuterio!
+tips-turn_on_tracker = Naudojate oficialius VoidReality sekiklius? Nepamirškite <b><em>įjungti juos</em></b> po prijungimo prie kompiuterio!
 tips-failed_webgl = Įvyko techninė klaida inicijuojant WebGL.
 
 ## Units
@@ -97,7 +97,7 @@ board_type-WROOM32 = WROOM32
 board_type-WEMOSD1MINI = Wemos D1 Mini
 board_type-TTGO_TBASE = TTGO T-Base
 board_type-ESP01 = ESP-01
-board_type-SLIMEVR = SlimeVR
+board_type-SLIMEVR = VoidReality
 board_type-LOLIN_C3_MINI = Lolin C3 Mini
 board_type-BEETLE32C3 = Beetle ESP32-C3
 board_type-ESP32C3DEVKITM1 = Espressif ESP32-C3 DevKitM-1
@@ -108,7 +108,7 @@ board_type-WEMOSWROOM02 = Wemos Wroom-02 D1 Mini
 board_type-XIAO_ESP32C3 = Seeed Studio XIAO ESP32C3
 board_type-HARITORA = Haritora
 board_type-ESP32C6DEVKITC1 = Espressif ESP32-C6 DevKitC-1
-board_type-GLOVE_IMU_SLIMEVR_DEV = SlimeVR Dev IMU Glove
+board_type-GLOVE_IMU_SLIMEVR_DEV = VoidReality Dev IMU Glove
 
 ## Proportions
 
@@ -290,6 +290,7 @@ tracker-table-column-battery = Baterija
 tracker-table-column-ping = Ping
 tracker-table-column-tps = TPS
 tracker-table-column-temperature = Temp. °C
+tracker-table-column-drift = Drift deg/min
 tracker-table-column-linear-acceleration = Akcel. X/Y/Z
 tracker-table-column-rotation = Rotacija X/Y/Z
 tracker-table-column-position = Pozicija X/Y/Z
@@ -321,6 +322,7 @@ tracker-infos-data_support = Duomenų palaikymas
 tracker-infos-imu = IMU jutiklis
 tracker-infos-board_type = Pagrindinė plokštė
 tracker-infos-network_version = Protokolo versija
+tracker-infos-drift_rate = Yaw drift deg/min
 tracker-infos-magnetometer = Magnetometras
 tracker-infos-magnetometer-status-v1 =
     { $status ->
@@ -356,7 +358,7 @@ tracker-settings-name_section-description = Sugalvokite jam mielą vardą :)
 tracker-settings-name_section-placeholder = NightyBeast kairė koja
 tracker-settings-name_section-label = Sekiklio pavadinimas
 tracker-settings-forget = Pamiršti sekiklį
-tracker-settings-forget-description = Tai pašalins sekiklį iš SlimeVR serverio ir nebeleis jam prisijungti, kol neperkrausite serverį. Sekiklio nustatymai nebus prarasti.
+tracker-settings-forget-description = Tai pašalins sekiklį iš VoidReality serverio ir nebeleis jam prisijungti, kol neperkrausite serverį. Sekiklio nustatymai nebus prarasti.
 tracker-settings-forget-label = Pamiršti sekiklį
 tracker-settings-update-low-battery = Negalima atnaujinti, baterijos lygis žemesnis nei 50%
 tracker-settings-update-up_to_date = Atnaujinta
@@ -702,4 +704,59 @@ error_collection_modal-confirm = Sutinku
 error_collection_modal-cancel = Nesutinku
 
 ## Tracking checklist section
-
+home-drift_summary = Session drift deg/min
+home-drift_summary-average = Average
+home-drift_summary-worst = Worst
+home-drift_summary-measured = Measured
+tracker-infos-drift_chart = Drift per reset deg/min
+tracker-infos-drift_chart-resets = { $amount } resets measured
+tracker-card-drift = Drift
+tracker-card-drift-tooltip = Yaw drift per minute, measured at each reset. Green is under 1, yellow 1 to 3, red over 3. Lower is better.
+tracker-card-drift-tooltip-temp = Temperature: { $temp } C
+tracker-table-expanded-open_settings = Open tracker settings
+tracker-table-expanded-drift_hint = Do 2 yaw resets 60s apart to measure
+settings-general-fk_settings-fallback = Fallback tracking
+settings-general-fk_settings-fallback-description = When a tracker stops sending data, estimate that limb from its live parent instead of freezing it at the last pose.
+settings-general-fk_settings-fallback-enabled = Estimate lost trackers from parent
+home-stay_aligned-active = Stay Aligned active
+home-stay_aligned-correction = Total correction deg
+home-stay_aligned-locked = Locked
+diagnostics-title = Tracking Diagnostics
+diagnostics-description = Per tracker drift, temperature, alignment and connection health for this session. Click a tracker to open its settings.
+diagnostics-no_trackers = No IMU trackers connected.
+diagnostics-drift = Drift deg/min
+diagnostics-temp = Temp C
+diagnostics-stay_aligned = Stay Aligned
+diagnostics-ping = Ping
+diagnostics-packet_loss = Packet loss
+diagnostics-battery = Battery
+settings-general-steamvr-trackers-emulate_all-label = Emulate all trackers (20 point)
+settings-general-steamvr-trackers-emulate_all-description = Sends a tracker for every body part, estimating the ones you have no physical tracker for. Turns off automatic toggling while on.
+settings-general-steamvr-trackers-emulate_all-requirement = Needs at least 2 below knee trackers (foot or ankle) to anchor the leg estimation.
+navbar-emulated = Emulated
+emulated-title = Emulated Trackers
+emulated-open_settings = Settings
+emulated-description = { $emulated } of { $total } body parts are estimated, the rest come from physical trackers.
+emulated-none = No body trackers yet.
+emulated-badge-emulated = Emulated
+emulated-badge-real = Real
+settings-sidebar-emulated = Emulated
+settings-sidebar-emulated_trackers = Emulated trackers
+settings-emulated = Emulated Trackers
+settings-emulated-description =
+    Emulated trackers fill in body parts you have no physical tracker for. They are estimated from the trackers you do have and sent as their own trackers, so you reach more tracking points than you own. Toggle them fully on or off here.
+    Leg estimation needs an anchor below each knee (a foot or ankle tracker) so the pose can be solved instead of guessed.
+    This is different from fallback tracking: fallback only steps in when a physical tracker dies, temporarily feeding that tracker's output from an estimate until it comes back. Fallback lives under Tracker Mechanics, not here.
+settings-emulated-enable = Emulate all trackers
+settings-emulated-enable-description = Sends a tracker for every body part, estimating the ones without a physical tracker. Also enables the VRChat OSC roles so they reach VRChat directly, bypassing SteamVR.
+settings-emulated-enable-label = Emulate all trackers (20 point)
+settings-emulated-requirement = Below knee trackers detected: { $count } of 2 needed
+settings-emulated-straight_leg = Straight leg estimation
+settings-emulated-straight_leg-description =
+    For an emulated thigh with a tracked shin or ankle, aligns the thigh with the shin so the leg follows it as one segment instead of hanging from the hip.
+    Looks right standing and walking, approximate when the knee is bent. Only affects emulated legs.
+settings-emulated-straight_leg-label = Straight leg estimation
+toolbar-emulated_trackers = { $count } emulated { $count ->
+    [one] tracker
+   *[other] trackers
+}

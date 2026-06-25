@@ -21,7 +21,7 @@ import {
 import { useConfig } from '@/hooks/config';
 import { useWebsocketAPI } from '@/hooks/websocket-api';
 import { useLocaleConfig } from '@/i18n/config';
-import { CheckBox } from '@/components/commons/Checkbox';
+import { CheckBox, CheckboxInternal } from '@/components/commons/Checkbox';
 import { SteamIcon } from '@/components/commons/icon/SteamIcon';
 import { WrenchIcon } from '@/components/commons/icon/WrenchIcons';
 import { NumberSelector } from '@/components/commons/NumberSelector';
@@ -46,6 +46,7 @@ import {
   ResetSettingsForm,
 } from '@/hooks/reset-settings';
 import { atom, useAtomValue, useSetAtom } from 'jotai';
+import { connectedIMUTrackersAtom } from '@/store/app-store';
 import { isEqual } from '@react-hookz/deep-equal';
 import { selectAtom } from 'jotai/utils';
 import { Dropdown } from '@/components/commons/Dropdown';
@@ -82,6 +83,7 @@ export type SettingsForm = {
     usePosition: boolean;
     enforceConstraints: boolean;
     correctConstraints: boolean;
+    fallbackTracking: boolean;
   };
   ratios: {
     imputeWaistFromChestHip: number;
@@ -147,6 +149,7 @@ const defaultValues: SettingsForm = {
     usePosition: true,
     enforceConstraints: true,
     correctConstraints: true,
+    fallbackTracking: true,
   },
   ratios: {
     imputeWaistFromChestHip: 0.3,
@@ -227,9 +230,51 @@ export function GeneralSettings() {
       reValidateMode: 'onChange',
     });
 
-  const {
-    trackers: { automaticTrackerToggle },
-  } = watch();
+  const { trackers: watchedTrackers } = watch();
+  const automaticTrackerToggle = watchedTrackers?.automaticTrackerToggle;
+
+  // 20 point emulation is on when automatic is off and every role is shared, so the
+  // skeleton fills body parts that have no physical tracker with estimated ones
+  const emulateAll =
+    !!watchedTrackers &&
+    !watchedTrackers.automaticTrackerToggle &&
+    !!watchedTrackers.waist &&
+    !!watchedTrackers.chest &&
+    !!watchedTrackers.leftFoot &&
+    !!watchedTrackers.rightFoot &&
+    !!watchedTrackers.leftKnee &&
+    !!watchedTrackers.rightKnee &&
+    !!watchedTrackers.leftElbow &&
+    !!watchedTrackers.rightElbow;
+
+  // Emulated legs estimate better with a foot or ankle tracker on each leg, but this is
+  // advice, not a requirement. Elbows are solved from the controllers and need no legs.
+  const imuTrackers = useAtomValue(connectedIMUTrackersAtom);
+  const belowKneeCount = imuTrackers.filter(({ tracker }) => {
+    const bp = tracker.info?.bodyPart;
+    return (
+      bp === BodyPart.LEFT_FOOT ||
+      bp === BodyPart.RIGHT_FOOT ||
+      bp === BodyPart.LEFT_LOWER_LEG ||
+      bp === BodyPart.RIGHT_LOWER_LEG
+    );
+  }).length;
+  const hasLegAnchors = belowKneeCount >= 2;
+
+  const setEmulateAll = (enable: boolean) => {
+    setValue('trackers.automaticTrackerToggle', !enable);
+    if (enable) {
+      setValue('trackers.waist', true);
+      setValue('trackers.chest', true);
+      setValue('trackers.leftFoot', true);
+      setValue('trackers.rightFoot', true);
+      setValue('trackers.leftKnee', true);
+      setValue('trackers.rightKnee', true);
+      setValue('trackers.leftElbow', true);
+      setValue('trackers.rightElbow', true);
+    }
+    handleSubmit(onSubmit)();
+  };
 
   const onSubmit = (values: SettingsForm) => {
     const settingsReq = new ChangeSettingsRequestT();
@@ -291,6 +336,7 @@ export function GeneralSettings() {
       toggles.usePosition = values.toggles.usePosition;
       toggles.enforceConstraints = values.toggles.enforceConstraints;
       toggles.correctConstraints = values.toggles.correctConstraints;
+      toggles.fallbackTracking = values.toggles.fallbackTracking;
       modelSettings.toggles = toggles;
     }
 
@@ -561,6 +607,33 @@ export function GeneralSettings() {
               name="trackers.automaticTrackerToggle"
               label={l10n.getString(
                 'settings-general-steamvr-trackers-tracker_toggling-label'
+              )}
+            />
+            <div className="flex flex-col pt-3" />
+            <div className="flex flex-col pb-2">
+              <Typography color="secondary">
+                {l10n.getString(
+                  'settings-general-steamvr-trackers-emulate_all-description'
+                )}
+              </Typography>
+              {!hasLegAnchors && (
+                <Typography color="secondary">
+                  {l10n.getString(
+                    'settings-general-steamvr-trackers-emulate_all-requirement'
+                  )}
+                </Typography>
+              )}
+            </div>
+            <CheckboxInternal
+              variant="toggle"
+              outlined
+              name="emulateAllTrackers"
+              checked={emulateAll}
+              onChange={(e) =>
+                setEmulateAll((e.target as HTMLInputElement).checked)
+              }
+              label={l10n.getString(
+                'settings-general-steamvr-trackers-emulate_all-label'
               )}
             />
             <div className="flex flex-col pt-4" />
@@ -897,6 +970,28 @@ export function GeneralSettings() {
                 name="toggles.toeSnap"
                 label={l10n.getString(
                   'settings-general-fk_settings-leg_tweak-toe_snap'
+                )}
+              />
+            </div>
+
+            <div className="flex flex-col pt-2 pb-3">
+              <Typography variant="section-title">
+                {l10n.getString('settings-general-fk_settings-fallback')}
+              </Typography>
+              <Typography>
+                {l10n.getString(
+                  'settings-general-fk_settings-fallback-description'
+                )}
+              </Typography>
+            </div>
+            <div className="grid sm:grid-cols-1 gap-3 pb-3">
+              <CheckBox
+                variant="toggle"
+                outlined
+                control={control}
+                name="toggles.fallbackTracking"
+                label={l10n.getString(
+                  'settings-general-fk_settings-fallback-enabled'
                 )}
               />
             </div>

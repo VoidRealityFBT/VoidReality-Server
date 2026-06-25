@@ -27,21 +27,10 @@ object TrackerYaw {
 	) > MIN_ON_SIDE_ANGLE
 
 	/**
-	 * Gets the yaw of the tracker, for trackers that are not on its side.
-	 *
-	 * WARNING: DO NOT USE for a tracker that is on its side. Euler YZX angles have a
-	 * singularity for a tracker that is on its side, and can yield arbitrary yaws.
-	 * For example, the Euler YZX angles (Y=0°, Z=90°, X=30°) and (Y=30°, Z=90°, X=0°)
-	 * are equivalent but yield completely different yaws.
-	 *
-	 * WARNING: It is possible to use another EulerOrder which does not have a
-	 * singularity for this rotation to get "some" yaw, but this yaw will be very
-	 * different from the from YZX. DO NOT ATTEMPT!
+	 * Gets the yaw of the tracker about world up.
 	 */
 	fun trackerYaw(tracker: Tracker) = Angle.ofRad(
-		tracker.getAdjustedRotationForceStayAligned()
-			.toEulerAngles(EulerOrder.YZX)
-			.y,
+		tracker.getAdjustedRotationForceStayAligned().toEulerAngles(EulerOrder.YZX).y,
 	)
 
 	/**

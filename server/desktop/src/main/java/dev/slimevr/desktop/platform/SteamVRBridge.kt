@@ -8,6 +8,7 @@ import dev.slimevr.bridge.ISteamVRBridge
 import dev.slimevr.config.BridgeConfig
 import dev.slimevr.desktop.platform.ProtobufMessages.*
 import dev.slimevr.protocol.rpc.settings.RPCSettingsHandler
+import dev.slimevr.tracking.processor.config.SkeletonConfigToggles
 import dev.slimevr.tracking.trackers.DeviceOrigin
 import dev.slimevr.tracking.trackers.Tracker
 import dev.slimevr.tracking.trackers.TrackerPosition
@@ -153,8 +154,22 @@ abstract class SteamVRBridge(
 			TrackerRole.RIGHT_FOOT to setOf(skeleton.rightLowerLegTracker, skeleton.rightFootTracker),
 		)
 
+		// Body parts that feed each role, used to keep a role on when its physical tracker
+		// died but is still assigned, so the estimated output stays on
+		val roleToPositions = mapOf(
+			TrackerRole.CHEST to setOf(TrackerPosition.UPPER_CHEST, TrackerPosition.CHEST),
+			TrackerRole.LEFT_ELBOW to setOf(TrackerPosition.LEFT_UPPER_ARM),
+			TrackerRole.RIGHT_ELBOW to setOf(TrackerPosition.RIGHT_UPPER_ARM),
+			TrackerRole.WAIST to setOf(TrackerPosition.WAIST, TrackerPosition.HIP),
+			TrackerRole.LEFT_KNEE to setOf(TrackerPosition.LEFT_UPPER_LEG),
+			TrackerRole.RIGHT_KNEE to setOf(TrackerPosition.RIGHT_UPPER_LEG),
+			TrackerRole.LEFT_FOOT to setOf(TrackerPosition.LEFT_LOWER_LEG, TrackerPosition.LEFT_FOOT),
+			TrackerRole.RIGHT_FOOT to setOf(TrackerPosition.RIGHT_LOWER_LEG, TrackerPosition.RIGHT_FOOT),
+		)
+		val fallbackOn = instance.humanPoseManager.getToggle(SkeletonConfigToggles.FALLBACK_TRACKING)
+
 		for ((role, trackers) in roleToTrackers) {
-			val shouldShare = if (role == TrackerRole.WAIST) {
+			val baseShare = if (role == TrackerRole.WAIST) {
 				// Waist is special, it should be enabled if there is any tracker on the spine,
 				// but ignored if the waist or hip tracker is from us
 				skeleton.hasSpineTracker &&
@@ -166,10 +181,30 @@ abstract class SteamVRBridge(
 					it != null && it.device?.origin != DeviceOrigin.STEAMVR
 				}
 			}
+			// Fallback keeps the role on while a physical tracker is assigned to it but
+			// dead, so the estimated tracker keeps feeding the same SteamVR output
+			val hasPhysical = hasAssignedPhysicalTracker(roleToPositions[role] ?: emptySet())
+			val shouldShare = baseShare || (fallbackOn && hasPhysical)
+			if (shouldShare != getShareSetting(role)) {
+				LogManager.info(
+					"[SteamVRBridge] role $role share ${getShareSetting(role)} -> $shouldShare " +
+						"(base=$baseShare fallback=$fallbackOn hasPhysical=$hasPhysical)",
+				)
+			}
 			changeShareSettings(role, shouldShare)
 		}
 		return true
 	}
+
+	// True if a physical tracker is assigned to one of the positions, regardless of its
+	// status, so a dead but still connected tracker keeps its role shared
+	private fun hasAssignedPhysicalTracker(positions: Set<TrackerPosition>): Boolean =
+		instance.allTrackers.any {
+			!it.isInternal &&
+				!it.isComputed &&
+				it.device?.origin != DeviceOrigin.STEAMVR &&
+				it.trackerPosition in positions
+		}
 
 	override fun getAutomaticSharedTrackers(): Boolean = config.automaticSharedTrackersToggling
 

@@ -74,7 +74,44 @@ body {
 }
 
 /* Colors have to be in RGB format currently */
+/* Base palette matches the void theme so the app loads monochrome */
 :root {
+  --background-10: 250, 250, 250;
+  --background-20: 212, 212, 212;
+  --background-30: 163, 163, 163;
+  --background-40: 115, 115, 115;
+  --background-50: 51, 51, 51;
+  --background-60: 35, 35, 35;
+  --background-70: 21, 21, 21;
+  --background-80: 10, 10, 10;
+  --background-90: 0, 0, 0;
+
+  --accent-background-10: 163, 163, 163;
+  --accent-background-20: 82, 82, 82;
+  --accent-background-30: 64, 64, 64;
+  --accent-background-40: 38, 38, 38;
+  --accent-background-50: 23, 23, 23;
+
+  --success: 80, 232, 151;
+  --warning: 255, 225, 53;
+  --critical: 223, 109, 140;
+  --special: 229, 229, 229;
+  --window-icon-stroke: 163, 163, 163;
+
+  --default-color: 250, 250, 250;
+
+  /* Default font size */
+  --font-size: 12rem;
+  --font-size-standard: var(--font-size);
+  /* 16% bigger */
+  --font-size-vr: calc(var(--font-size) * 1.16);
+  /* 100.08% bigger */
+  --font-size-title: calc(var(--font-size) * 2.08);
+
+  --font-name: 'poppins';
+}
+
+:root[data-theme='slime'] {
   --background-10: 255, 255, 255;
   --background-20: 120, 164, 198;
   --background-30: 96, 138, 171;
@@ -98,16 +135,33 @@ body {
   --window-icon-stroke: 192, 161, 216;
 
   --default-color: 255, 255, 255;
+}
 
-  /* Default font size */
-  --font-size: 12rem;
-  --font-size-standard: var(--font-size);
-  /* 16% bigger */
-  --font-size-vr: calc(var(--font-size) * 1.16);
-  /* 100.08% bigger */
-  --font-size-title: calc(var(--font-size) * 2.08);
+/* VoidReality default theme, monochrome black and white in the shadcn neutral style */
+:root[data-theme='void'] {
+  --background-10: 250, 250, 250;
+  --background-20: 212, 212, 212;
+  --background-30: 163, 163, 163;
+  --background-40: 115, 115, 115;
+  --background-50: 51, 51, 51;
+  --background-60: 35, 35, 35;
+  --background-70: 21, 21, 21;
+  --background-80: 10, 10, 10;
+  --background-90: 0, 0, 0;
 
-  --font-name: 'poppins';
+  --accent-background-10: 163, 163, 163;
+  --accent-background-20: 82, 82, 82;
+  --accent-background-30: 64, 64, 64;
+  --accent-background-40: 38, 38, 38;
+  --accent-background-50: 23, 23, 23;
+
+  --success: 80, 232, 151;
+  --warning: 255, 225, 53;
+  --critical: 223, 109, 140;
+  --special: 229, 229, 229;
+  --window-icon-stroke: 163, 163, 163;
+
+  --default-color: 250, 250, 250;
 }
 
 :root[data-theme='trans'] {
@@ -425,11 +479,4 @@ div {
 
 [data-electron-drag-region='true'] {
   -webkit-app-region: drag;
-}
-
-a,
-.no-user-drag {
-  -webkit-user-drag: none;
-  -webkit-user-select: none;
-  user-select: none;
 }

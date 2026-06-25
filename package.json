@@ -13,11 +13,7 @@
     "skipbundler": "cd gui && pnpm run skipbundler",
     "build": "cd gui && pnpm build",
     "update-solarxr": "cd solarxr-protocol && pnpm run build",
-    "prepare": "husky && pnpm run update-solarxr",
+    "prepare": "pnpm run update-solarxr",
     "preinstall": "npx only-allow pnpm"
-  },
-  "devDependencies": {
-    "husky": "^9.1.6",
-    "lint-staged": "^15.2.10"
   }
 }

@@ -9,6 +9,7 @@ import { useBreakpoint } from '@/hooks/breakpoint';
 import { HomeIcon } from './commons/icon/HomeIcon';
 import { SkiIcon } from './commons/icon/SkiIcon';
 import { WifiIcon } from './commons/icon/WifiIcon';
+import { CubeIcon } from './commons/icon/CubeIcon';
 
 export function NavButton({
   to,
@@ -34,7 +35,7 @@ export function NavButton({
       className={classnames(
         'flex flex-col justify-center xs:gap-4 mobile:gap-2',
         'mobile:w-[65px] mobile:h-[65px]',
-        'xs:py-3 mobile:py-4 rounded-md mobile:rounded-b-none group',
+        'xs:py-3 mobile:py-4 rounded-md mobile:rounded-b-none group select-text',
         {
           'bg-accent-background-50 fill-accent-background-20': doesMatch,
           'hover:bg-background-70': !doesMatch,
@@ -100,6 +101,9 @@ export function MainLinks() {
         state={{ alonePage: true }}
       >
         {l10n.getString('navbar-connect_trackers')}
+      </NavButton>
+      <NavButton to="/emulated" icon={<CubeIcon />}>
+        {l10n.getString('navbar-emulated')}
       </NavButton>
     </>
   );

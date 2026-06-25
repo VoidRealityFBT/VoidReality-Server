@@ -93,6 +93,16 @@ class LockedErrorVisitor(
 	companion object {
 
 		/**
+		 * Whether the yaw of a rotation is further than the threshold from a target,
+		 * using the on-side-safe yaw difference.
+		 */
+		fun yawFarFrom(
+			rotation: Quaternion,
+			targetRotation: Quaternion,
+			threshold: Angle,
+		): Boolean = abs(yawDifference(rotation, targetRotation).toDeg()) > threshold.toDeg()
+
+		/**
 		 * Gets the yaw between two rotations, for small rotations.
 		 *
 		 * A locked tracker can be in any rotation, so we cannot use

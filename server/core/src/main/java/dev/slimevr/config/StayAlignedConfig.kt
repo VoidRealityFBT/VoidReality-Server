@@ -41,4 +41,15 @@ class StayAlignedConfig {
 	 * Whether setup has been completed
 	 */
 	var setupComplete = false
+
+	/**
+	 * Pause the centering force unless the player is clearly upright (standing or sitting).
+	 *
+	 * In any other pose(lying on the back, on the side, on the stomach, slanted, kneeling,
+	 * legs in the air, or an unrecognized pose), the legs are often horizontal, where yaw
+	 * about vertical is degenerate. There the centering force pulls them toward a wrong (often
+	 * standing) shape and crosses the legs. The locked anti drift force still runs, so trackers
+	 * at rest are still held in place and the body does not drift.
+	 */
+	var pauseCenteringWhenNotUpright = true
 }

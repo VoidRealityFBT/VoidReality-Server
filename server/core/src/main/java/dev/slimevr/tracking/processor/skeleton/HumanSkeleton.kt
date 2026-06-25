@@ -31,6 +31,7 @@ import io.github.axisangles.ktmath.Vector3
 import io.github.axisangles.ktmath.Vector3.Companion.NEG_Y
 import io.github.axisangles.ktmath.Vector3.Companion.NULL
 import io.github.axisangles.ktmath.Vector3.Companion.POS_Y
+import io.github.axisangles.ktmath.Vector3.Companion.POS_Z
 import solarxr_protocol.datatypes.BodyPart
 import java.lang.IllegalArgumentException
 import kotlin.properties.Delegates
@@ -194,6 +195,18 @@ class HumanSkeleton(
 	private var extendedSpineModel = false
 	private var extendedPelvisModel = false
 	private var extendedKneeModel = false
+
+	// Knee flexion past this angle starts fading out the extended knee correction, in radians
+	private val kneeFadeStart = 1.92f // about 110 degrees
+	// Knee flexion at which the extended knee correction is fully faded out, in radians
+	private val kneeFadeEnd = 2.62f // about 150 degrees
+
+	// When a tracker stops sending data, estimate its limb from the live parent instead of freezing
+	private var fallbackTracking = true
+
+	// Align an emulated thigh with the tracked shin so the leg follows it instead of hanging down
+	private var straightLegEmulation = false
+
 	private var forceArmsFromHMD = true
 	private var enforceConstraints = true
 	private var correctConstraints = true
@@ -547,6 +560,8 @@ class HumanSkeleton(
 
 		updateTransforms()
 		updateBones()
+		// Solve emulated joints from positions, which are only known after updateBones
+		if (applyArmIK()) updateBones()
 		if (enforceConstraints) {
 			// TODO re-enable toggling correctConstraints once
 			// https://github.com/SlimeVR/SlimeVR-Server/issues/1297 is solved
@@ -772,15 +787,16 @@ class HumanSkeleton(
 			// Get head rotation
 			headRot = head.getRotation()
 
-			// Set head rotation
+			// The head bone is the skeleton's positional root, so the whole spine below hangs
+			// off its rotation. It must use the full, self-consistent HMD rotation. Do NOT
+			// recombine the head's pitch/roll with a different yaw source (a spine tracker):
+			// pitch and roll are frame-dependent, so re-basing them onto a mismatched yaw turns
+			// head pitch into body tilt and makes the torso lean and swing when you turn your head.
 			headBone.setRotation(headRot)
 			headTrackerBone.setRotation(headRot)
 
-			// Get neck rotation
-			neckTracker?.let { headRot = it.getRotation() }
-
-			// Set neck rotation
-			neckBone.setRotation(headRot)
+			// Neck follows its own tracker if present, otherwise the head rotation
+			neckBone.setRotation(usableTracker(neckTracker)?.getRotation() ?: headRot)
 		} ?: run {
 			// Set head position
 			if (!localizer.getEnabled()) headBone.setPosition(NULL)
@@ -801,9 +817,24 @@ class HumanSkeleton(
 	}
 
 	/**
+	 * Returns the tracker unless fallback is on and it stopped sending data, in which case it
+	 * returns null so the limb is estimated from its parent. A connected tracker is always
+	 * used even if it has drifted: drifted-but-real tracking beats a default estimate, and the
+	 * player can reset it. (A drift-based handoff here snapped hot or lying-down trackers(which
+	 * read large or bogus drift) to a standing pose while still connected, so it was removed.)
+	 */
+	private fun usableTracker(tracker: Tracker?): Tracker? = tracker?.takeUnless {
+		fallbackTracking && !it.status.sendData
+	}
+
+	/**
 	 * Update the spine transforms, from the upper chest to the hip
 	 */
 	private fun updateSpineTransforms() {
+		val upperChestTracker = usableTracker(upperChestTracker)
+		val chestTracker = usableTracker(chestTracker)
+		val waistTracker = usableTracker(waistTracker)
+		val hipTracker = usableTracker(hipTracker)
 		if (hasSpineTracker) {
 			// Upper chest and chest tracker
 			getFirstAvailableTracker(upperChestTracker, chestTracker, waistTracker, hipTracker)?.let {
@@ -936,14 +967,48 @@ class HumanSkeleton(
 		lowerLegTracker: Tracker?,
 		footTracker: Tracker?,
 	) {
+		// Drop trackers that stopped sending data so the limb estimates from its parent
+		// instead of freezing at the last received pose
+		val upperLegTracker = usableTracker(upperLegTracker)
+		val lowerLegTracker = usableTracker(lowerLegTracker)
+		val footTracker = usableTracker(footTracker)
+
 		var legRot = IDENTITY
 
 		upperLegTracker?.let {
 			// Get upper leg rotation
 			legRot = it.getRotation()
 		} ?: run {
-			// Use hip's yaw
-			legRot = hipBone.getLocalRotation().project(POS_Y).unit()
+			val shin = lowerLegTracker
+			legRot = if (straightLegEmulation && shin != null) {
+				// Straight leg emulation: keep the thigh aligned with the tracked shin so the
+				// leg stays straight
+				shin.getRotation()
+			} else {
+				// No thigh tracker: hang the thigh from the pelvis using the hip's full
+				// world rotation, so the knee bends as the tracked shin swings and the thigh
+				// still points the right way when the body is horizontal. Must be the global
+				// rotation, not the local one, which carries the bone's rotationOffset.
+				//
+				// This estimates only the REAR bend (heel toward the butt). Bending the leg
+				// when the foot is lifted in FRONT is intentionally left out. The attempt
+				// below would fold a forward shin swing into the thigh so the leg lifts with
+				// the foot, but it is disabled because:
+				//   1. It mixes frames: hipBone.getGlobalRotation() is bone space (composed
+				//      through the skeleton and the bone's rotationOffset) while
+				//      shin.getRotation() is a raw tracker world rotation, so the knee hinge
+				//      X axis taken from hipRot.inv() * shin is unreliable and regressed the
+				//      working rear bend (both hinge signs broke it).
+				//   2. Even done correctly it only handles a foot EXTENDED forward (a simple
+				//      step). A high knee lift/marching, where the shin hangs straight down,
+				//      reads the same as standing, so the raised thigh is unobservable.
+				// val hipRot = hipBone.getGlobalRotation()
+				// val raw = hipRot.inv() * (shin?.getRotation() ?: hipRot)
+				// val rel = if (raw.w < 0f) Quaternion(-raw.w, -raw.x, -raw.y, -raw.z) else raw
+				// if (rel.x < 0f) hipRot * Quaternion(rel.w, rel.x, 0f, 0f).unit() else hipRot
+				// 67 (I'm sorry :3)
+				hipBone.getGlobalRotation()
+			}
 		}
 		// Set upper leg rotation
 		upperLegBone.setRotation(legRot)
@@ -975,8 +1040,15 @@ class HumanSkeleton(
 					val lowerRot = lower.getRotation()
 					val extendedRot = extendedKneeYawRoll(upperRot, lowerRot)
 
-					upperLegBone.setRotation(upperRot.interpR(extendedRot, kneeAnkleAveraging))
-					kneeTrackerBone.setRotation(upperRot.interpR(extendedRot, kneeTrackerAnkleAveraging))
+					// The yaw and roll extraction becomes unstable at deep knee bends, so
+					// fade the correction out past the flexion threshold. Below it normal
+					// poses are unchanged, above it the leg follows the raw trackers and
+					// stops twisting in kneeling, cross legged and heel to thigh poses.
+					val flexion = (upperRot.inv() * lowerRot).angleR()
+					val fade = ((kneeFadeEnd - flexion) / (kneeFadeEnd - kneeFadeStart)).coerceIn(0f, 1f)
+
+					upperLegBone.setRotation(upperRot.interpR(extendedRot, kneeAnkleAveraging * fade))
+					kneeTrackerBone.setRotation(upperRot.interpR(extendedRot, kneeTrackerAnkleAveraging * fade))
 				}
 			}
 		}
@@ -999,6 +1071,12 @@ class HumanSkeleton(
 		lowerArmTracker: Tracker?,
 		handTracker: Tracker?,
 	) {
+		// Drop arm trackers that stopped sending data so the arm estimates from its parent
+		val shoulderTracker = usableTracker(shoulderTracker)
+		val upperArmTracker = usableTracker(upperArmTracker)
+		val lowerArmTracker = usableTracker(lowerArmTracker)
+		val handTracker = usableTracker(handTracker)
+
 		if (isTrackingFromController) { // From controller
 			// Set hand rotation and position from tracker
 			handTracker?.let {
@@ -1175,6 +1253,112 @@ class HumanSkeleton(
 		}
 	}
 
+	/**
+	 * Bends an emulated elbow toward the controller for an arm that has no arm trackers,
+	 * instead of letting the arm hang from the chest. Runs after positions are known.
+	 * Returns true if any arm was solved, so the caller can refresh the bones.
+	 */
+	private fun applyArmIK(): Boolean {
+		// Tied to the estimation umbrella so it can be turned off and so it does not move
+		// arms for users who keep them off their controllers on purpose
+		if (!fallbackTracking) return false
+		var solved = false
+		if (!hasLeftArmTracker &&
+			solveArmIK(
+				leftHandTracker,
+				leftUpperArmBone,
+				leftLowerArmBone,
+				leftHandBone,
+				leftElbowTrackerBone,
+				isTrackingLeftArmFromController,
+			)
+		) {
+			solved = true
+		}
+		if (!hasRightArmTracker &&
+			solveArmIK(
+				rightHandTracker,
+				rightUpperArmBone,
+				rightLowerArmBone,
+				rightHandBone,
+				rightElbowTrackerBone,
+				isTrackingRightArmFromController,
+			)
+		) {
+			solved = true
+		}
+		return solved
+	}
+
+	/**
+	 * Two bone inverse kinematics for one arm. Places the elbow from the shoulder and the
+	 * controller so the emulated elbow tracker follows the controller. Handles both the
+	 * forward HMD arm chain and the reversed controller arm chain.
+	 */
+	private fun solveArmIK(
+		handTracker: Tracker?,
+		upperArm: Bone,
+		lowerArm: Bone,
+		hand: Bone,
+		elbowTracker: Bone,
+		fromController: Boolean,
+	): Boolean {
+		val controller = handTracker ?: return false
+		if (!controller.hasPosition) return false
+
+		val shoulder = upperArm.getPosition()
+		val upperLen = upperArm.length
+		// In controller mode the hand and wrist already track the controller, so the elbow
+		// is solved between the shoulder and the wrist. In HMD mode the whole arm is free,
+		// so the elbow is solved between the shoulder and the controller itself.
+		val end: Vector3
+		val lowerLen: Float
+		if (fromController) {
+			end = lowerArm.getPosition()
+			lowerLen = lowerArm.length
+		} else {
+			end = controller.position
+			lowerLen = lowerArm.length + hand.length
+		}
+		if (upperLen <= 0f || lowerLen <= 0f) return false
+
+		val toEnd = end - shoulder
+		val dist = toEnd.len()
+		if (dist < 1e-4f) return false
+		val axis = toEnd / dist
+
+		// Clamp so the triangle stays solvable when the arm is fully straight or folded
+		val minLen = kotlin.math.abs(upperLen - lowerLen) + 1e-3f
+		val maxLen = upperLen + lowerLen - 1e-3f
+		val d = dist.coerceIn(minLen, maxLen)
+		val along = (upperLen * upperLen - lowerLen * lowerLen + d * d) / (2f * d)
+		val height = kotlin.math.sqrt(kotlin.math.max(0f, upperLen * upperLen - along * along))
+
+		// Elbow points down and back relative to the chest, made perpendicular to the arm
+		val chestRot = upperChestBone.getGlobalRotation()
+		val hint = (chestRot.sandwich(NEG_Y) + chestRot.sandwich(POS_Z)).unit()
+		var pole = hint - axis * (hint dot axis)
+		if (pole.lenSq() < 1e-6f) pole = NEG_Y - axis * (NEG_Y dot axis)
+		if (pole.lenSq() < 1e-6f) return false
+		pole = pole.unit()
+
+		val elbow = shoulder + axis * along + pole * height
+		val upperRot = fromTo(upperArm.rotationOffset.sandwich(NEG_Y), (elbow - shoulder).unit())
+		upperArm.setRotation(upperRot)
+		elbowTracker.setRotation(upperRot)
+
+		if (fromController) {
+			// The lower arm hangs from the wrist toward the elbow, placing the elbow tracker
+			lowerArm.setRotation(fromTo(lowerArm.rotationOffset.sandwich(NEG_Y), (elbow - end).unit()))
+		} else {
+			// The lower arm and hand run from the elbow out to the controller
+			val lowerDir = (end - elbow).unit()
+			lowerArm.setRotation(fromTo(lowerArm.rotationOffset.sandwich(NEG_Y), lowerDir))
+			hand.setRotation(fromTo(hand.rotationOffset.sandwich(NEG_Y), lowerDir))
+		}
+		return true
+	}
+
 	// Skeleton Config toggles
 	fun updateToggleState(configToggle: SkeletonConfigToggles, newValue: Boolean) {
 		when (configToggle) {
@@ -1205,6 +1389,10 @@ class HumanSkeleton(
 			SkeletonConfigToggles.ENFORCE_CONSTRAINTS -> enforceConstraints = newValue
 
 			SkeletonConfigToggles.CORRECT_CONSTRAINTS -> correctConstraints = newValue
+
+			SkeletonConfigToggles.FALLBACK_TRACKING -> fallbackTracking = newValue
+
+			SkeletonConfigToggles.STRAIGHT_LEG_EMULATION -> straightLegEmulation = newValue
 		}
 	}
 

@@ -16,6 +16,11 @@ import { Checklist } from '@/components/commons/icon/ChecklistIcon';
 import { useState } from 'react';
 import { HomeSettingsModal } from './HomeSettingsModal';
 import { LayoutIcon } from '@/components/commons/icon/LayoutIcon';
+import { SessionDriftSummary } from './SessionDriftSummary';
+import { ResetReminder } from './ResetReminder';
+import { StayAlignedStatus } from './StayAlignedStatus';
+import { EmulatedTrackersSection } from './EmulatedTrackersSection';
+import { TrackerLogPanel } from './TrackerLogPanel';
 
 export function Home() {
   const { l10n } = useLocalization();
@@ -50,6 +55,9 @@ export function Home() {
         <Checklist />
       </NavLink>
       <div className="overflow-y-auto flex flex-col gap-3">
+        <StayAlignedStatus />
+        <SessionDriftSummary />
+        <ResetReminder />
         <div className="flex w-full gap-2 items-center px-4 h-5">
           <Typography
             color="secondary"
@@ -65,9 +73,12 @@ export function Home() {
           </div>
         </div>
         {trackers.length === 0 && (
-          <div className="flex px-5 pt-5 justify-center">
+          <div className="flex flex-col gap-1 px-5 pt-5 items-center text-center">
             <Typography variant="standard">
               {l10n.getString('home-no_trackers')}
+            </Typography>
+            <Typography variant="standard" color="secondary">
+              {l10n.getString('home-no_trackers-restart_hint')}
             </Typography>
           </div>
         )}
@@ -146,6 +157,9 @@ export function Home() {
             )}
           </>
         )}
+
+        <EmulatedTrackersSection />
+        <TrackerLogPanel />
       </div>
     </div>
   );

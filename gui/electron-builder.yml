@@ -1,5 +1,5 @@
-appId: dev.slimevr.SlimeVR
-productName: SlimeVR
+appId: dev.voidreality.VoidReality
+productName: VoidReality
 # Global naming pattern
 artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 
@@ -70,7 +70,7 @@ win:
 
 mac:
   target: dmg
-  artifactName: "SlimeVR-mac.${ext}"
+  artifactName: "VoidReality-mac.${ext}"
   x64ArchFiles: "**/register-protocol-handler.node"
   icon: "./electron/resources/icons/icon.icns"
   extraFiles:

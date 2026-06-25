@@ -31,6 +31,7 @@ import { Input } from '@/components/commons/Input';
 import { Typography } from '@/components/commons/Typography';
 import { MountingSelectionMenu } from '@/components/onboarding/pages/mounting/MountingSelectionMenu';
 import { IMUVisualizerWidget } from '@/components/widgets/IMUVisualizerWidget';
+import { DriftChart } from '@/components/tracker/DriftChart';
 import { SingleTrackerBodyAssignmentMenu } from './SingleTrackerBodyAssignmentMenu';
 import { TrackerCard } from './TrackerCard';
 import { Quaternion } from 'three';
@@ -381,6 +382,33 @@ export function TrackerSettingsPage() {
                 {tracker?.device?.hardwareInfo?.networkProtocolVersion || '--'}
               </Typography>
             </div>
+            {tracker?.tracker.info?.isImu && (
+              <div className="flex justify-between">
+                <Typography>
+                  {l10n.getString('tracker-infos-drift_rate')}
+                </Typography>
+                <Typography
+                  color={classNames({
+                    'text-status-success':
+                      tracker.tracker.info.driftRate != null &&
+                      tracker.tracker.info.driftRate !== 0 &&
+                      tracker.tracker.info.driftRate < 1,
+                    'text-status-warning':
+                      tracker.tracker.info.driftRate != null &&
+                      tracker.tracker.info.driftRate >= 1 &&
+                      tracker.tracker.info.driftRate < 3,
+                    'text-status-critical':
+                      tracker.tracker.info.driftRate != null &&
+                      tracker.tracker.info.driftRate >= 3,
+                  })}
+                >
+                  {tracker.tracker.info.driftRate != null &&
+                  tracker.tracker.info.driftRate !== 0
+                    ? tracker.tracker.info.driftRate.toFixed(2)
+                    : '--'}
+                </Typography>
+              </div>
+            )}
             {tracker?.device?.hardwareStatus?.packetsReceived !== null && (
               <>
                 <div className="flex justify-between">
@@ -413,6 +441,9 @@ export function TrackerSettingsPage() {
               </>
             )}
           </div>
+          {tracker?.tracker.info?.isImu && (
+            <DriftChart tracker={tracker.tracker} />
+          )}
           {tracker?.tracker && (
             <IMUVisualizerWidget tracker={tracker?.tracker} />
           )}

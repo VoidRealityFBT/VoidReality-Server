@@ -62,7 +62,14 @@ class FirmwareUpdateHandler(private val server: VRServer) :
 	private val updatingDevicesStatus: MutableMap<UpdateDeviceId<*>, UpdateStatusEvent<*>> =
 		ConcurrentHashMap()
 	private val listeners: MutableList<FirmwareUpdateListener> = CopyOnWriteArrayList()
-	private val mainScope: CoroutineScope = CoroutineScope(SupervisorJob())
+	// Catch any uncaught error from a firmware update coroutine so a bad update can never
+	// take the whole server down
+	private val mainScope: CoroutineScope = CoroutineScope(
+		SupervisorJob() +
+			CoroutineExceptionHandler { _, e ->
+				LogManager.severe("[FirmwareUpdateHandler] Uncaught error in update job", e)
+			},
+	)
 	private var clearJob: Deferred<Unit>? = null
 
 	private var serialRebootHandler: SerialRebootHandler = SerialRebootHandler(watchRestartQueue, server, this)
@@ -227,7 +234,14 @@ class FirmwareUpdateHandler(private val server: VRServer) :
 			val udpDevice: UDPDevice? =
 				(server.deviceManager.devices.find { device -> device is UDPDevice && device.id == deviceId.id }) as UDPDevice?
 			if (udpDevice === null) {
-				error("invalid state - device does not exist")
+				// Report it as a failed update instead of throwing, so the server stays up
+				onStatusChange(
+					UpdateStatusEvent(
+						deviceId,
+						FirmwareUpdateStatus.ERROR_DEVICE_NOT_FOUND,
+					),
+				)
+				return@launch
 			}
 
 			if (udpDevice.protocolVersion <= 20) {
@@ -514,8 +528,21 @@ fun downloadFirmware(url: String, expectedDigest: String): ByteArray {
 
 	val downloadedData = outputStream.toByteArray()
 
-	if (!verifyChecksum(downloadedData, expectedDigest)) {
+	// A blank digest means a local test file (file:// url), so skip verification. Real
+	// releases always carry a digest, which is still checked.
+	if (expectedDigest.isNotBlank() && !verifyChecksum(downloadedData, expectedDigest)) {
 		error("Checksum verification failed for $url")
+	}
+
+	// Sanity check the bytes before anything is sent to a tracker. Every ESP app image (both
+	// ESP8266 and ESP32 families) starts with magic byte 0xE9, and a real image is far larger
+	// than this floor. This stops a wrong/corrupt/non-firmware file from ever being flashed,
+	// which is the main way a custom .bin could leave a tracker in a bad state.
+	if (downloadedData.size < 16 * 1024 || downloadedData[0] != 0xE9.toByte()) {
+		error(
+			"$url does not look like ESP firmware (missing 0xE9 image header or too small), " +
+				"refusing to flash it",
+		)
 	}
 
 	return downloadedData

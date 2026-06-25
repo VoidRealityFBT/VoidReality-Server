@@ -3,6 +3,9 @@ package dev.slimevr.tracking.processor.stayaligned
 import dev.slimevr.VRServer
 import dev.slimevr.config.StayAlignedConfig
 import dev.slimevr.math.Angle
+import dev.slimevr.tracking.processor.stayaligned.StayAlignedDefaults.DRIFT_ADAPT_MAX_SCALE
+import dev.slimevr.tracking.processor.stayaligned.StayAlignedDefaults.DRIFT_ADAPT_MIN_SCALE
+import dev.slimevr.tracking.processor.stayaligned.StayAlignedDefaults.DRIFT_ADAPT_REFERENCE_DEG_PER_MIN
 import dev.slimevr.tracking.processor.stayaligned.StayAlignedDefaults.IMU_TO_YAW_CORRECTION
 import dev.slimevr.tracking.processor.stayaligned.StayAlignedDefaults.YAW_CORRECTION_DEFAULT
 import dev.slimevr.tracking.processor.stayaligned.adjust.AdjustTrackerYaw
@@ -44,9 +47,21 @@ object StayAligned {
 			return
 		}
 
+		// Scale correction authority by the drift predicted for this tracker at its current
+		// temperature (falling back to the measured rate), so drifty and warming trackers get
+		// corrected harder and stable ones get nudged less
+		val measuredDrift = trackerToAdjust.resetsHandler.predictedDriftRateDegPerMin()
+		val driftScale = if (measuredDrift != 0f) {
+			(measuredDrift / DRIFT_ADAPT_REFERENCE_DEG_PER_MIN)
+				.coerceIn(DRIFT_ADAPT_MIN_SCALE, DRIFT_ADAPT_MAX_SCALE)
+		} else {
+			1.0f
+		}
+
 		// Scale yaw correction since we're only updating one tracker per tick
 		val yawCorrection =
 			yawCorrectionPerSec *
+				driftScale *
 				VRServer.instance.fpsTimer.timePerFrame *
 				numTrackers.toFloat()
 

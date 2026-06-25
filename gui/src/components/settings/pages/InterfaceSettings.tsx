@@ -1,13 +1,13 @@
 import { Localized, useLocalization } from '@fluent/react';
 import { useEffect } from 'react';
-import { FieldPath, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { CheckBox } from '@/components/commons/Checkbox';
 import { Typography } from '@/components/commons/Typography';
 import {
   SettingsPageLayout,
   SettingsPagePaneLayout,
 } from '@/components/settings/SettingsPageLayout';
-import { defaultConfig, DeveloperModeConfig, useConfig } from '@/hooks/config';
+import { defaultConfig, useConfig } from '@/hooks/config';
 import { ThemeSelector } from '@/components/commons/ThemeSelector';
 import { SquaresIcon } from '@/components/commons/icon/SquaresIcon';
 import { NumberSelector } from '@/components/commons/NumberSelector';
@@ -18,6 +18,7 @@ import { Range } from '@/components/commons/Range';
 import { Dropdown } from '@/components/commons/Dropdown';
 import { ArrowRightLeftIcon } from '@/components/commons/icon/ArrowIcons';
 import { SystemFileInput } from '@/components/commons/SystemFileInput';
+import { DeveloperModeWidget } from '@/components/widgets/DeveloperModeWidget';
 import { useElectron } from '@/hooks/electron';
 
 interface InterfaceSettingsForm {
@@ -27,6 +28,7 @@ interface InterfaceSettingsForm {
     fonts: string;
   };
   behavior: {
+    devmode: boolean;
     useTray: boolean;
     discordPresence: boolean;
     errorTracking: boolean;
@@ -37,9 +39,6 @@ interface InterfaceSettingsForm {
     feedbackSound: boolean;
     feedbackSoundVolume: number;
     connectedTrackersWarning: boolean;
-  };
-  developer: DeveloperModeConfig & {
-    enabled: boolean;
   };
 }
 
@@ -66,34 +65,12 @@ export function InterfaceSettings() {
           defaultConfig.connectedTrackersWarning,
       },
       behavior: {
+        devmode: config?.debug ?? defaultConfig.debug,
         useTray: config?.useTray ?? defaultConfig.useTray ?? false,
         discordPresence:
           config?.discordPresence ?? defaultConfig.discordPresence,
         errorTracking: config?.errorTracking ?? false,
         bvhDirectory: config?.bvhDirectory ?? defaultConfig.bvhDirectory,
-      },
-      developer: {
-        enabled: config?.debug ?? defaultConfig.debug,
-        highContrast:
-          config?.devSettings?.highContrast ??
-          defaultConfig.devSettings.highContrast,
-        preciseRotation:
-          config?.devSettings?.preciseRotation ??
-          defaultConfig.devSettings.preciseRotation,
-        fastDataFeed:
-          config?.devSettings?.fastDataFeed ??
-          defaultConfig.devSettings.fastDataFeed,
-        filterSlimesAndHMD:
-          config?.devSettings?.filterSlimesAndHMD ??
-          defaultConfig.devSettings.filterSlimesAndHMD,
-        sortByName:
-          config?.devSettings?.sortByName ??
-          defaultConfig.devSettings.sortByName,
-        rawSlimeRotation:
-          config?.devSettings?.rawSlimeRotation ??
-          defaultConfig.devSettings.rawSlimeRotation,
-        moreInfo:
-          config?.devSettings?.moreInfo ?? defaultConfig.devSettings.moreInfo,
       },
     },
   });
@@ -135,11 +112,9 @@ export function InterfaceSettings() {
 
       useTray: values.behavior.useTray,
       discordPresence: values.behavior.discordPresence,
+      debug: values.behavior.devmode,
       errorTracking: values.behavior.errorTracking,
       bvhDirectory: values.behavior.bvhDirectory,
-
-      debug: values.developer.enabled,
-      devSettings: values.developer,
     });
   };
 
@@ -152,16 +127,6 @@ export function InterfaceSettings() {
     const subscription = watch(() => handleSubmit(onSubmit)());
     return () => subscription.unsubscribe();
   }, []);
-
-  const devToggles = {
-    highContrast: 'high_contrast',
-    preciseRotation: 'precise_rotation',
-    fastDataFeed: 'fast_data_feed',
-    filterSlimesAndHMD: 'filter_slimes_and_hmd',
-    sortByName: 'sort_by_name',
-    rawSlimeRotation: 'raw_slime_rotation',
-    moreInfo: 'more_info',
-  };
 
   return (
     <SettingsPageLayout>
@@ -334,31 +299,18 @@ export function InterfaceSettings() {
                 </Typography>
               </div>
               <div className="grid grid-cols-1 gap-2 pb-4 w-full">
-                <CheckBox
-                  variant="toggle"
-                  control={control}
-                  outlined
-                  name="developer.enabled"
-                  label={l10n.getString(
-                    'settings-general-interface-dev_mode-label'
-                  )}
-                />
-                {!!config?.debug && (
-                  <div className="grid grid-cols-2 w-full rounded-md gap-2">
-                    {Object.entries(devToggles).map(([name, label], i) => (
-                      <CheckBox
-                        key={i}
-                        control={control}
-                        variant="toggle"
-                        outlined
-                        name={
-                          `developer.${name}` as FieldPath<InterfaceSettingsForm>
-                        }
-                        label={l10n.getString(`widget-developer_mode-${label}`)}
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="">
+                  <CheckBox
+                    variant="toggle"
+                    control={control}
+                    outlined
+                    name="behavior.devmode"
+                    label={l10n.getString(
+                      'settings-general-interface-dev_mode-label'
+                    )}
+                  />
+                </div>
+                {config?.debug && <DeveloperModeWidget />}
               </div>
 
               <Typography variant="section-title">
@@ -432,6 +384,12 @@ export function InterfaceSettings() {
                 {l10n.getString('settings-general-interface-theme')}
               </Typography>
               <div className="flex flex-wrap gap-3 pt-2">
+                <ThemeSelector
+                  control={control}
+                  name="appearance.theme"
+                  value={'void'}
+                  colors="!bg-void"
+                />
                 <ThemeSelector
                   control={control}
                   name="appearance.theme"

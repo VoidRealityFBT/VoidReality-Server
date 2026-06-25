@@ -7,13 +7,50 @@ import dev.slimevr.config.DriftCompensationConfig
 import dev.slimevr.config.ResetsConfig
 import dev.slimevr.filtering.CircularArrayList
 import dev.slimevr.tracking.trackers.udp.TrackerDataType
+import io.eiren.util.logging.LogManager
 import io.github.axisangles.ktmath.EulerAngles
 import io.github.axisangles.ktmath.EulerOrder
 import io.github.axisangles.ktmath.Quaternion
 import io.github.axisangles.ktmath.Vector3
+import java.util.Locale
 import kotlin.math.*
 
 private const val DRIFT_COOLDOWN_MS = 50000L
+
+// resets closer together than this give too noisy a drift measurement
+private const val DRIFT_MEASURE_MIN_MS = 60000L
+
+// intervals longer than this are not trusted: a fast tracker can drift more than 180 degrees of
+// yaw over a long gap, which wraps to the shortest angle and under reports the rate, so we skip
+// learning from it rather than poison the estimate with a too low number
+private const val DRIFT_MEASURE_MAX_MS = 900000L
+
+// EMA weight for blending each reset's measured drift rate into the running estimate. One
+// noisy interval moves the estimate by only this fraction, so a single bad sample cannot
+// capture it; over several resets the estimate settles on the tracker's real behavior.
+private const val DRIFT_RATE_EMA_ALPHA = 0.3f
+
+// Once an estimate is established, a sample both this many times larger than it and this many
+// deg/min above it is treated as a physical disturbance (the tracker slipped on the limb, was
+// pulled back up the thigh, or was knocked) rather than gyro drift, and is not learned from.
+// Drift is a property of the sensor, not where it sits, so a reposition must not poison it.
+private const val DRIFT_RATE_OUTLIER_FACTOR = 4f
+private const val DRIFT_RATE_OUTLIER_MIN_ABS_DEG_PER_MIN = 5f
+
+// A slip is a one off event; big samples that keep coming are real fast drift (a hot tracker
+// genuinely drifts that hard). After this many big samples in a row we stop treating them as
+// slips and let the estimate climb to the truth, so a fast tracker is not stuck reporting low.
+private const val DRIFT_RATE_MAX_CONSECUTIVE_SLIPS = 2
+
+// Temperature binned drift model. Gyro bias, the source of yaw drift, shifts with IMU
+// temperature, so drift rate is learned as a function of temperature: each ~2 C bin holds an
+// EMA of the rate measured there. Prediction reads the bin for the current temperature, which
+// lets a warming tracker be corrected for its learned warm up drift instead of waiting for
+// resets to remeasure it. Samples outside the range are clamped into the end bins.
+private const val DRIFT_TEMP_BIN_WIDTH_C = 2f
+private const val DRIFT_TEMP_MIN_C = 10f
+private const val DRIFT_TEMP_MAX_C = 50f
+private const val DRIFT_TEMP_BIN_MIN_SAMPLES = 1
 
 /** Class taking care of full reset, yaw reset, mounting reset, and drift compensation logic. */
 class TrackerResetsHandler(val tracker: Tracker) {
@@ -41,6 +78,115 @@ class TrackerResetsHandler(val tracker: Tracker) {
 	var resetHmdPitch = false
 	var allowDriftCompensation = false
 	var lastResetQuaternion: Quaternion? = null
+
+	// last measured yaw drift rate in degrees per minute, for logging and diagnostics
+	var measuredDriftRateDegPerMin = 0f
+		private set
+
+	// consecutive big "slip looking" samples; lets a genuinely fast tracker recover instead of
+	// every high sample being rejected as a slip forever (see measureDrift)
+	private var consecutiveSlipSamples = 0
+
+	// time of the last drift measurement, independent of drift compensation
+	private var driftMeasureSince = 0L
+
+	// IMU temperature at the start of the current drift measurement interval, so the measured
+	// rate can be attributed to the interval's average temperature in the model below
+	private var driftMeasureStartTemp: Float? = null
+
+	private val tempDriftModel = TempDriftModel()
+
+	/**
+	 * Per tracker learned map of yaw drift rate (deg/min) against IMU temperature. Each bin
+	 * holds an EMA of the rate measured at that temperature plus a sample count, so prediction
+	 * can give a cold or warming tracker its learned drift rate for the temperature it is at.
+	 */
+	private class TempDriftModel {
+		private val binCount =
+			((DRIFT_TEMP_MAX_C - DRIFT_TEMP_MIN_C) / DRIFT_TEMP_BIN_WIDTH_C).toInt() + 1
+		private val rate = FloatArray(binCount)
+		private val count = IntArray(binCount)
+
+		private fun indexFor(tempC: Float): Int =
+			((tempC - DRIFT_TEMP_MIN_C) / DRIFT_TEMP_BIN_WIDTH_C).toInt().coerceIn(0, binCount - 1)
+
+		fun record(tempC: Float, sampleRate: Float) {
+			val i = indexFor(tempC)
+			rate[i] = if (count[i] == 0) {
+				sampleRate
+			} else {
+				rate[i] + (sampleRate - rate[i]) * DRIFT_RATE_EMA_ALPHA
+			}
+			count[i]++
+		}
+
+		// The learned rate for this temperature, or the nearest populated bin's rate, or null
+		// when nothing has been learned yet (caller then falls back to the measured scalar).
+		fun predict(tempC: Float): Float? {
+			val center = indexFor(tempC)
+			var offset = 0
+			while (center - offset >= 0 || center + offset < binCount) {
+				val lo = center - offset
+				val hi = center + offset
+				if (lo >= 0 && count[lo] >= DRIFT_TEMP_BIN_MIN_SAMPLES) return rate[lo]
+				if (hi < binCount && count[hi] >= DRIFT_TEMP_BIN_MIN_SAMPLES) return rate[hi]
+				offset++
+			}
+			return null
+		}
+
+		private fun binCenter(i: Int): Float =
+			DRIFT_TEMP_MIN_C + (i + 0.5f) * DRIFT_TEMP_BIN_WIDTH_C
+
+		// Populated bins as a map of bin center temperature to rate, for persistence. Keyed by
+		// temperature rather than bin index so the saved curve survives a change of bin layout.
+		fun export(): Map<String, Float> {
+			val out = HashMap<String, Float>()
+			for (i in 0 until binCount) {
+				if (count[i] > 0) out[String.format(Locale.ROOT, "%.1f", binCenter(i))] = rate[i]
+			}
+			return out
+		}
+
+		// Restores a saved curve, re-binning by temperature. Loaded bins count as established so
+		// later samples blend into them rather than overwriting the learned value.
+		fun import(bins: Map<String, Float>) {
+			for ((tempStr, r) in bins) {
+				val t = tempStr.toFloatOrNull() ?: continue
+				val i = indexFor(t)
+				rate[i] = r
+				if (count[i] < 1) count[i] = 1
+			}
+		}
+	}
+
+	/** Populated drift-versus-temperature bins for persistence (bin center C to deg/min). */
+	fun exportDriftModel(): Map<String, Float> = tempDriftModel.export()
+
+	/** Loads a persisted drift-versus-temperature curve learned in a previous session. */
+	fun importDriftModel(bins: Map<String, Float>?) {
+		if (bins != null) tempDriftModel.import(bins)
+	}
+
+	/**
+	 * Drift rate to drive correction with: the temperature model's prediction for the current
+	 * IMU temperature when it has learned something, otherwise the smoothed measured rate. Same
+	 * units and meaning as "measuredDriftRateDegPerMin", so Stay Aligned consumes it unchanged.
+	 */
+	fun predictedDriftRateDegPerMin(): Float {
+		val temp = tracker.temperature
+		if (temp != null) {
+			tempDriftModel.predict(temp)?.let { return it }
+		}
+		return measuredDriftRateDegPerMin
+	}
+
+	private fun averageTemp(a: Float?, b: Float?): Float? = when {
+		a != null && b != null -> (a + b) / 2f
+		a != null -> a
+		b != null -> b
+		else -> null
+	}
 
 	// Manual mounting orientation
 	var mountingOrientation = HalfHorizontal
@@ -120,7 +266,8 @@ class TrackerResetsHandler(val tracker: Tracker) {
 	 * Reads/loads drift compensation settings from given config
 	 */
 	fun readDriftCompensationConfig(config: DriftCompensationConfig) {
-		compensateDrift = false
+		// was hardcoded false which left the GUI toggle dead and drift compensation never ran
+		compensateDrift = config.enabled
 		driftPrediction = config.prediction
 		driftAmount = config.amount
 		val maxResets = config.maxResets
@@ -188,12 +335,31 @@ class TrackerResetsHandler(val tracker: Tracker) {
 	/**
 	 * Get the reference adjusted accel.
 	 */
-	// TODO: Make this actually adjusted to the corrected IMU heading. The current
-	//  implementation for heading correction doesn't appear to be correct and may simply
-	//  make acceleration worse, so I'm just leaving this until we work that out. The
-	//  output of this will be world space, but with an unknown offset to heading (yaw).
-	//  - Butterscotch
-	fun getReferenceAdjustedAccel(rawRot: Quaternion, accel: Vector3): Vector3 = rawRot.sandwich(accel)
+	// Rotate the local vector to world space, then align its heading to the reset
+	// reference with a yaw only correction so the vertical component stays intact. The
+	// previous version did no heading correction so the output had an arbitrary yaw.
+	fun getReferenceAdjustedAccel(rawRot: Quaternion, accel: Vector3): Vector3 {
+		val headingCorrection = getYawQuaternion(adjustToReference(rawRot)) * getYawQuaternion(rawRot).inv()
+		return (headingCorrection * rawRot).sandwich(accel)
+	}
+
+	/**
+	 * Transforms a measured angular velocity from the raw tracker body frame into the
+	 * reference adjusted body frame, so it matches the rotation the filter sees. Only the
+	 * body side (right multiplied) factors of adjustToReference rotate a body-frame rate;
+	 * the heading corrections, Stay Aligned and drift compensation are all world side and
+	 * leave it unchanged. Mirrors the body side of adjustToReference exactly.
+	 */
+	fun adjustAngularVelocityToReference(angularVelocity: Vector3): Vector3 {
+		var bodyFrame = Quaternion.IDENTITY
+		if (!tracker.isHmd || tracker.trackerPosition != TrackerPosition.HEAD) {
+			bodyFrame *= mountingOrientation
+		}
+		bodyFrame *= attachmentFix
+		bodyFrame *= mountRotFix
+		bodyFrame *= tposeDownFix
+		return bodyFrame.inv().sandwich(angularVelocity)
+	}
 
 	/**
 	 * Converts raw or filtered rotation into reference- and
@@ -330,6 +496,7 @@ class TrackerResetsHandler(val tracker: Tracker) {
 			tracker.yawResetSmoothing.reset()
 		}
 
+		measureDrift(oldRot)
 		calculateDrift(oldRot)
 
 		// Reset Stay Aligned (before resetting filtering, which depends on the
@@ -375,6 +542,7 @@ class TrackerResetsHandler(val tracker: Tracker) {
 
 		makeIdentityAdjustmentQuatsYaw()
 
+		measureDrift(oldRot)
 		calculateDrift(oldRot)
 
 		// Start at yaw before reset if smoothing enabled
@@ -479,13 +647,10 @@ class TrackerResetsHandler(val tracker: Tracker) {
 		return rot.inv() * reference.project(Vector3.POS_Y).unit()
 	}
 
-	// TODO : isolating yaw for yaw reset bad.
-	// The way we isolate the tracker's yaw for yaw reset is
-	// incorrect. Projection around the Y-axis is worse.
-	// In both cases, the isolated yaw value changes
-	// with the tracker's roll when pointing forward.
-	// calling twinNearest() makes sure this rotation has the wanted polarity (+-).
-	private fun getYawQuaternion(rot: Quaternion): Quaternion = EulerAngles(EulerOrder.YZX, 0f, rot.toEulerAngles(EulerOrder.YZX).y, 0f).toQuaternion().twinNearest(rot)
+	private fun getYawQuaternion(rot: Quaternion): Quaternion {
+		val yaw = rot.toEulerAngles(EulerOrder.YZX).y
+		return EulerAngles(EulerOrder.YZX, 0f, yaw, 0f).toQuaternion()
+	}
 
 	private fun makeIdentityAdjustmentQuatsFull() {
 		val sensorRotation = tracker.getRawRotation()
@@ -580,6 +745,86 @@ class TrackerResetsHandler(val tracker: Tracker) {
 
 			driftSince = System.currentTimeMillis()
 		}
+	}
+
+	/**
+	 * Estimates how much yaw drift has accumulated since the last reset, using the
+	 * measured drift rate. Used to hand a badly drifting tracker off to a fallback
+	 * estimate. Returns 0 until a rate has been measured.
+	 */
+	fun estimatedDriftSinceResetDeg(): Float {
+		if (measuredDriftRateDegPerMin == 0f || driftMeasureSince == 0L) return 0f
+		val minutesSinceReset = (System.currentTimeMillis() - driftMeasureSince) / 60000f
+		return measuredDriftRateDegPerMin * minutesSinceReset
+	}
+
+	/**
+	 * Measures the yaw drift rate at each reset, independent of drift
+	 * compensation, so logging, the GUI, and Stay Aligned can use it
+	 */
+	private fun measureDrift(beforeQuat: Quaternion) {
+		val now = System.currentTimeMillis()
+		if (driftMeasureSince > 0) {
+			val elapsed = now - driftMeasureSince
+			if (elapsed > DRIFT_MEASURE_MAX_MS) {
+				LogManager.info(
+					"[TrackerResetsHandler] ${tracker.name} skipping drift measurement, interval " +
+						"%.1f min too long to trust (yaw may have wrapped)".format(elapsed / 60000.0),
+				)
+			} else if (elapsed >= DRIFT_MEASURE_MIN_MS) {
+				val rotQuat = adjustToReference(tracker.getRawRotation())
+				val driftQuat = getYawQuaternion(rotQuat) / getYawQuaternion(beforeQuat)
+				val driftDeg = Math.toDegrees(driftQuat.angleR().toDouble())
+				val sampleRate = (driftDeg / (elapsed / 60000.0)).toFloat()
+
+				val established = measuredDriftRateDegPerMin > 0f
+				// A sudden jump far above an established estimate looks like a physical slip or
+				// reposition rather than drift. But a genuinely fast tracker (a hot one) drifts
+				// like that for real, so only a ONE OFF jump is dropped: a relative and an
+				// absolute gate flag the jump, and we reject it just a couple of times in a row.
+				val looksLikeSlip = established &&
+					sampleRate - measuredDriftRateDegPerMin > DRIFT_RATE_OUTLIER_MIN_ABS_DEG_PER_MIN &&
+					sampleRate > measuredDriftRateDegPerMin * DRIFT_RATE_OUTLIER_FACTOR
+
+				if (looksLikeSlip && consecutiveSlipSamples < DRIFT_RATE_MAX_CONSECUTIVE_SLIPS) {
+					consecutiveSlipSamples++
+					LogManager.info(
+						"[TrackerResetsHandler] ${tracker.name} ignoring drift sample " +
+							"%.2f deg/min as a possible slip, keeping %.2f deg/min".format(
+								sampleRate,
+								measuredDriftRateDegPerMin,
+							),
+					)
+				} else {
+					// A normal sample blends into the running estimate so it reflects several
+					// resets. A sustained big jump (slip looking but it keeps happening) is real
+					// fast drift, so take it directly instead of leaving a fast tracker stuck low.
+					measuredDriftRateDegPerMin = if (established && !looksLikeSlip) {
+						measuredDriftRateDegPerMin +
+							(sampleRate - measuredDriftRateDegPerMin) * DRIFT_RATE_EMA_ALPHA
+					} else {
+						sampleRate
+					}
+					consecutiveSlipSamples = 0
+					// Attribute this sample to the interval's average temperature so the model
+					// learns how this tracker drifts as it warms.
+					averageTemp(driftMeasureStartTemp, tracker.temperature)?.let {
+						tempDriftModel.record(it, sampleRate)
+					}
+					LogManager.info(
+						"[TrackerResetsHandler] ${tracker.name} measured yaw drift: " +
+							"%.2f deg over %.1f min (%.2f deg/min sample, %.2f deg/min smoothed)".format(
+								driftDeg,
+								elapsed / 60000.0,
+								sampleRate,
+								measuredDriftRateDegPerMin,
+							),
+					)
+				}
+			}
+		}
+		driftMeasureSince = now
+		driftMeasureStartTemp = tracker.temperature
 	}
 
 	/**

@@ -9,16 +9,16 @@
 
 websocket-connecting = Sunucuya bağlanılıyor...
 websocket-connection_lost = Sunucuyla bağlantı kesildi. Tekrar bağlanılmaya çalışılıyor...
-websocket-connection_lost-desc = SlimeVR sunucusu çöktü. Kayıtları kontrol edip programı yeniden başlat.
+websocket-connection_lost-desc = VoidReality sunucusu çöktü. Kayıtları kontrol edip programı yeniden başlat.
 websocket-timedout = Sunucuya bağlanılamadı
-websocket-timedout-desc = SlimeVR sunucusu çöktü veya zaman aşımına uğradı. Kayıtları kontrol et ve programı yeniden başlat.
-websocket-error-close = SlimeVR'ı kapat
+websocket-timedout-desc = VoidReality sunucusu çöktü veya zaman aşımına uğradı. Kayıtları kontrol et ve programı yeniden başlat.
+websocket-error-close = VoidReality'ı kapat
 websocket-error-logs = Kayıtlar klasörünü aç
 
 ## Update notification
 
 version_update-title = Yeni sürüm mevcut: { $version }
-version_update-description = "{ version_update-update }" seçeneğine tıklamak SlimeVR kurulum uygulamasını indirir.
+version_update-description = "{ version_update-update }" seçeneğine tıklamak VoidReality kurulum uygulamasını indirir.
 version_update-update = Güncelle
 version_update-close = Kapat
 
@@ -28,7 +28,7 @@ tips-find_tracker = Hangi takipçi hangisi emin değil misin? Takipçilerden bir
 tips-do_not_move_heels = Kayıt sırasında ayaklarının hareket etmediğinden emin ol!
 tips-file_select = Dosyaları sürükleyip bırak veya dosyalarından <u>seç</u>.
 tips-tap_setup = Menüden seçmek yerine takipçine 2 kez yavaşça dokunarak da seçebilirsin.
-tips-turn_on_tracker = Resmi SlimeVR takipçisi mi kullanıyorsun? Takipçilerini bilgisayara bağladıktan sonra onları <b><em>açmayı</em></b> unutma!
+tips-turn_on_tracker = Resmi VoidReality takipçisi mi kullanıyorsun? Takipçilerini bilgisayara bağladıktan sonra onları <b><em>açmayı</em></b> unutma!
 tips-failed_webgl = WebGL başlatılamadı.
 
 ## Units
@@ -100,9 +100,9 @@ board_type-WROOM32 = WROOM32
 board_type-WEMOSD1MINI = Wemos D1 Mini
 board_type-TTGO_TBASE = TTGO T-Base
 board_type-ESP01 = ESP-01
-board_type-SLIMEVR = SlimeVR
-board_type-SLIMEVR_DEV = SlimeVR Dev Board
-board_type-SLIMEVR_V1_2 = SlimeVR v1.2
+board_type-SLIMEVR = VoidReality
+board_type-SLIMEVR_DEV = VoidReality Dev Board
+board_type-SLIMEVR_V1_2 = VoidReality v1.2
 board_type-LOLIN_C3_MINI = Lolin C3 Mini
 board_type-BEETLE32C3 = Beetle ESP32-C3
 board_type-ESP32C3DEVKITM1 = Espressif ESP32-C3 DevKitM-1
@@ -113,12 +113,12 @@ board_type-WEMOSWROOM02 = Wemos Wroom-02 D1 Mini
 board_type-XIAO_ESP32C3 = Seeed Studio XIAO ESP32C3
 board_type-HARITORA = Haritora
 board_type-ESP32C6DEVKITC1 = Espressif ESP32-C6 DevKitC-1
-board_type-GLOVE_IMU_SLIMEVR_DEV = SlimeVR Dev IMU Eldiveni
+board_type-GLOVE_IMU_SLIMEVR_DEV = VoidReality Dev IMU Eldiveni
 board_type-GESTURES = Hareketler
 board_type-ESP32S3_SUPERMINI = ESP32-S3 Supermini
 board_type-GENERIC_NRF = Jenerik nRF
-board_type-SLIMEVR_BUTTERFLY_DEV = SlimeVR Dev Butterfly
-board_type-SLIMEVR_BUTTERFLY = SlimeVR Butterfly
+board_type-SLIMEVR_BUTTERFLY_DEV = VoidReality Dev Butterfly
+board_type-SLIMEVR_BUTTERFLY = VoidReality Butterfly
 
 ## Proportions
 
@@ -281,6 +281,7 @@ tracker-table-column-type = Tür
 tracker-table-column-battery = Pil
 tracker-table-column-tps = TPS
 tracker-table-column-temperature = Sıcaklık °C
+tracker-table-column-drift = Drift deg/min
 tracker-table-column-rotation = Rotasyon X/Y/Z
 tracker-table-column-position = Pozisyon X/Y/Z
 tracker-table-column-url = URL
@@ -517,4 +518,60 @@ settings-osc-vrchat-network-address = Ağ adresi
 
 
 ## Tracking checklist section
-
+tracker-infos-drift_rate = Yaw drift deg/min
+home-drift_summary = Session drift deg/min
+home-drift_summary-average = Average
+home-drift_summary-worst = Worst
+home-drift_summary-measured = Measured
+tracker-infos-drift_chart = Drift per reset deg/min
+tracker-infos-drift_chart-resets = { $amount } resets measured
+tracker-card-drift = Drift
+tracker-card-drift-tooltip = Yaw drift per minute, measured at each reset. Green is under 1, yellow 1 to 3, red over 3. Lower is better.
+tracker-card-drift-tooltip-temp = Temperature: { $temp } C
+tracker-table-expanded-open_settings = Open tracker settings
+tracker-table-expanded-drift_hint = Do 2 yaw resets 60s apart to measure
+settings-general-fk_settings-fallback = Fallback tracking
+settings-general-fk_settings-fallback-description = When a tracker stops sending data, estimate that limb from its live parent instead of freezing it at the last pose.
+settings-general-fk_settings-fallback-enabled = Estimate lost trackers from parent
+home-stay_aligned-active = Stay Aligned active
+home-stay_aligned-correction = Total correction deg
+home-stay_aligned-locked = Locked
+diagnostics-title = Tracking Diagnostics
+diagnostics-description = Per tracker drift, temperature, alignment and connection health for this session. Click a tracker to open its settings.
+diagnostics-no_trackers = No IMU trackers connected.
+diagnostics-drift = Drift deg/min
+diagnostics-temp = Temp C
+diagnostics-stay_aligned = Stay Aligned
+diagnostics-ping = Ping
+diagnostics-packet_loss = Packet loss
+diagnostics-battery = Battery
+settings-general-steamvr-trackers-emulate_all-label = Emulate all trackers (20 point)
+settings-general-steamvr-trackers-emulate_all-description = Sends a tracker for every body part, estimating the ones you have no physical tracker for. Turns off automatic toggling while on.
+settings-general-steamvr-trackers-emulate_all-requirement = Needs at least 2 below knee trackers (foot or ankle) to anchor the leg estimation.
+navbar-emulated = Emulated
+emulated-title = Emulated Trackers
+emulated-open_settings = Settings
+emulated-description = { $emulated } of { $total } body parts are estimated, the rest come from physical trackers.
+emulated-none = No body trackers yet.
+emulated-badge-emulated = Emulated
+emulated-badge-real = Real
+settings-sidebar-emulated = Emulated
+settings-sidebar-emulated_trackers = Emulated trackers
+settings-emulated = Emulated Trackers
+settings-emulated-description =
+    Emulated trackers fill in body parts you have no physical tracker for. They are estimated from the trackers you do have and sent as their own trackers, so you reach more tracking points than you own. Toggle them fully on or off here.
+    Leg estimation needs an anchor below each knee (a foot or ankle tracker) so the pose can be solved instead of guessed.
+    This is different from fallback tracking: fallback only steps in when a physical tracker dies, temporarily feeding that tracker's output from an estimate until it comes back. Fallback lives under Tracker Mechanics, not here.
+settings-emulated-enable = Emulate all trackers
+settings-emulated-enable-description = Sends a tracker for every body part, estimating the ones without a physical tracker. Also enables the VRChat OSC roles so they reach VRChat directly, bypassing SteamVR.
+settings-emulated-enable-label = Emulate all trackers (20 point)
+settings-emulated-requirement = Below knee trackers detected: { $count } of 2 needed
+settings-emulated-straight_leg = Straight leg estimation
+settings-emulated-straight_leg-description =
+    For an emulated thigh with a tracked shin or ankle, aligns the thigh with the shin so the leg follows it as one segment instead of hanging from the hip.
+    Looks right standing and walking, approximate when the knee is bent. Only affects emulated legs.
+settings-emulated-straight_leg-label = Straight leg estimation
+toolbar-emulated_trackers = { $count } emulated { $count ->
+    [one] tracker
+   *[other] trackers
+}

@@ -38,6 +38,9 @@ import { VRModePage } from './components/vr-mode/VRModePage';
 import { InterfaceSettings } from './components/settings/pages/InterfaceSettings';
 import { error, log } from './utils/logging';
 import { FirmwareToolSettings } from './components/firmware-tool/FirmwareTool';
+import { DiagnosticsPage } from './components/diagnostics/DiagnosticsPage';
+import { EmulatedTrackersPage } from './components/emulated/EmulatedTrackersPage';
+import { EmulatedSettings } from './components/settings/pages/EmulatedSettings';
 import { AppLayout } from './AppLayout';
 import { Preload } from './components/Preload';
 import { UnknownDeviceModal } from './components/UnknownDeviceModal';
@@ -45,6 +48,7 @@ import { useDiscordPresence } from './hooks/discord-presence';
 import { withSentryReactRouterV6Routing } from '@sentry/react';
 import { ScaledProportionsPage } from './components/onboarding/pages/body-proportions/ScaledProportions';
 import { AdvancedSettings } from './components/settings/pages/AdvancedSettings';
+import { NetworkSettings } from './components/settings/pages/NetworkSettings';
 import { FirmwareUpdate } from './components/firmware-update/FirmwareUpdate';
 import { ConnectionLost } from './components/onboarding/pages/ConnectionLost';
 import { VRCWarningsPage } from './components/vrc/VRCWarningsPage';
@@ -61,7 +65,11 @@ import { AppLocalizationProvider } from './i18n/config';
 import { openUrl } from './hooks/crossplatform';
 import { UdevRulesModal } from './components/onboarding/UdevRulesModal';
 
-export const GH_REPO = 'SlimeVR/SlimeVR-Server';
+import { VOIDREALITY_SERVER_REPO } from './utils/update-config';
+import { UpdatePanel } from './components/updates/UpdatePanel';
+import { UpdatesSettings } from './components/settings/pages/UpdatesSettings';
+
+export const GH_REPO = VOIDREALITY_SERVER_REPO;
 export const VersionContext = createContext('');
 export const DOCS_SITE = 'https://docs.slimevr.dev';
 export const SLIMEVR_DISCORD = 'https://discord.gg/slimevr';
@@ -129,6 +137,22 @@ function Layout() {
             }
           />
           <Route
+            path="/diagnostics"
+            element={
+              <MainLayout isMobile={isMobile}>
+                <DiagnosticsPage />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/emulated"
+            element={
+              <MainLayout isMobile={isMobile}>
+                <EmulatedTrackersPage />
+              </MainLayout>
+            }
+          />
+          <Route
             path="/settings"
             element={
               <SettingsLayout>
@@ -138,6 +162,8 @@ function Layout() {
           >
             <Route path="firmware-tool" element={<FirmwareToolSettings />} />
             <Route path="trackers" element={<GeneralSettings />} />
+            <Route path="emulated" element={<EmulatedSettings />} />
+            <Route path="updates" element={<UpdatesSettings />} />
             <Route path="serial" element={<Serial />} />
             <Route path="osc/router" element={<OSCRouterSettings />} />
             <Route path="osc/vrchat" element={<VRCOSCSettings />} />
@@ -145,6 +171,7 @@ function Layout() {
             <Route path="interface" element={<InterfaceSettings />} />
             <Route path="interface/home" element={<HomeScreenSettings />} />
             <Route path="advanced" element={<AdvancedSettings />} />
+            <Route path="network" element={<NetworkSettings />} />
           </Route>
           <Route
             path="/onboarding"
@@ -310,6 +337,7 @@ export default function App() {
                         <Preload />
                         {!websocketAPI.isConnected && <ConnectionLost />}
                         {websocketAPI.isConnected && <Layout />}
+                        {websocketAPI.isConnected && <UpdatePanel />}
                       </div>
                     </VersionContext.Provider>
                   </TrackingChecklistProvider>

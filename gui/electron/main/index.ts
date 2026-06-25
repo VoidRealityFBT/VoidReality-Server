@@ -65,16 +65,20 @@ protocol.registerSchemesAsPrivileged([
 
 let mainWindow: BrowserWindow | null = null;
 
+// VoidReality firmware repo for the update system.
+// keep in sync with src/utils/update-config.ts (separate bundle, cannot share the constant).
+const VOIDREALITY_FIRMWARE_REPO = 'N/A'; // Not open source yet.
+
 handleIpc(IPC_CHANNELS.GH_FETCH, async (e, options) => {
   if (options.type === 'fw-releases') {
     return fetch(
-      'https://api.github.com/repos/SlimeVR/SlimeVR-Tracker-ESP/releases'
+      `https://api.github.com/repos/${VOIDREALITY_FIRMWARE_REPO}/releases`
     ).then((res) => res.json());
   }
   if (options.type === 'asset') {
     if (
       !options.url.startsWith(
-        'https://github.com/SlimeVR/SlimeVR-Tracker-ESP/releases/download'
+        `https://github.com/${VOIDREALITY_FIRMWARE_REPO}/releases/download`
       )
     )
       return null;
@@ -127,14 +131,14 @@ handleIpc(IPC_CHANNELS.LOG, (e, type, ...args) => {
 });
 
 handleIpc(IPC_CHANNELS.OPEN_URL, (e, url) => {
-  const allowedUrls = [
+  const allowed_urls = [
     /^steam:\/\//,
     /^ms-settings:network$/,
     /^https:\/\/(?:.+\.)?slimevr\.dev(?:\/.+)?$/,
     /^https:\/\/github\.com\/SlimeVR(?:\/.+)?$/,
     /^https:\/\/discord\.gg\/slimevr$/,
   ];
-  if (allowedUrls.find((a) => url.match(a))) open(url);
+  if (allowed_urls.find((a) => url.match(a))) open(url);
   else logger.error({ url }, 'attempted to open non-whitelisted URL');
 });
 
@@ -311,7 +315,7 @@ function createWindow() {
     getPlatform() === 'macos' ? appleTrayIcon : trayIcon
   );
   const tray = new Tray(icon);
-  tray.setToolTip('SlimeVR');
+  tray.setToolTip('VoidReality');
   tray.on('click', () => {
     mainWindow?.show();
   });
@@ -371,13 +375,12 @@ function createWindow() {
 }
 
 const checkEnvironmentVariables = () => {
-  const disallowedVars = ['_JAVA_OPTIONS', 'JAVA_TOOL_OPTIONS'];
+  const to_check = ['_JAVA_OPTIONS', 'JAVA_TOOL_OPTIONS'];
 
-  const set = disallowedVars.filter((env) => !!process.env[env]);
+  const set = to_check.filter((env) => !!process.env[env]);
   if (set.length > 0) {
     dialog.showErrorBox(
-      'SlimeVR',
-      `You have environment variables ${set.join(', ')} set, which may cause the SlimeVR Server to fail to launch properly.`
+      `You have environment variables ${set.join(', ')} set, which may cause the VoidReality server to fail to launch properly.`
     );
     app.quit();
   }
@@ -403,8 +406,7 @@ const spawnServer = async () => {
   const javaBin = await findSystemJRE(sharedDir);
   if (!javaBin) {
     dialog.showErrorBox(
-      'SlimeVR',
-      'Unable to find a compatible Java version, please download Java 17 or higher'
+      `Couldn't find a compatible Java version, please download Java 17 or higher`
     );
     app.quit();
     return;
@@ -486,7 +488,6 @@ app.whenReady().then(async () => {
   } catch (err) {
     logger.error(err, 'Failed to initialize stores');
     dialog.showErrorBox(
-      'SlimeVR',
       'Failed to initialize application storage. Please make sure the application has write permissions to its data folder.'
     );
     app.quit();
@@ -499,7 +500,7 @@ app.whenReady().then(async () => {
 
   createWindow();
 
-  logger.info('SlimeVR started!');
+  logger.info('VoidReality started!');
 
   app.on('window-all-closed', () => {
     app.quit();

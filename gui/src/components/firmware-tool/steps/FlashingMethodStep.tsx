@@ -13,7 +13,6 @@ import {
   NewSerialDeviceResponseT,
   RpcMessage,
   SerialDeviceT,
-  SerialDeviceType,
   SerialDevicesRequestT,
   SerialDevicesResponseT,
   TrackerStatus,
@@ -78,14 +77,13 @@ function SerialDevicesList({
     RpcMessage.SerialDevicesResponse,
     (res: SerialDevicesResponseT) => {
       setDevices(
-        res.devices.reduce((curr, device) => {
-          if (device?.type != SerialDeviceType.ESP_TRACKER) return curr;
-
-          return {
+        res.devices.reduce(
+          (curr, device) => ({
             ...curr,
             [device?.port?.toString() ?? 'unknown']: device,
-          };
-        }, {})
+          }),
+          {}
+        )
       );
       setLoading(false);
     }
@@ -94,7 +92,7 @@ function SerialDevicesList({
   useRPCPacket(
     RpcMessage.NewSerialDeviceResponse,
     ({ device }: NewSerialDeviceResponseT) => {
-      if (device?.port && device?.type === SerialDeviceType.ESP_TRACKER)
+      if (device?.port)
         setDevices((old) => ({
           ...old,
           [device?.port?.toString() ?? 'unknown']: device,

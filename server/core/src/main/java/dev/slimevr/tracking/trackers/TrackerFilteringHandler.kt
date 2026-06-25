@@ -4,6 +4,7 @@ import dev.slimevr.config.FiltersConfig
 import dev.slimevr.filtering.QuaternionMovingAverage
 import dev.slimevr.filtering.TrackerFilters
 import io.github.axisangles.ktmath.Quaternion
+import io.github.axisangles.ktmath.Vector3
 
 /**
  * Class taking care of filtering logic
@@ -48,6 +49,13 @@ class TrackerFilteringHandler {
 	 */
 	fun dataTick(currentRawRotation: Quaternion) {
 		movingAverage.addQuaternion(currentRawRotation)
+	}
+
+	/**
+	 * Feeds a measured angular velocity from the firmware gyro to the filter
+	 */
+	fun setMeasuredAngularVelocity(velocity: Vector3) {
+		movingAverage.setMeasuredAngularVelocity(velocity)
 	}
 
 	/**
