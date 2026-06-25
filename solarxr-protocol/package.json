@@ -1,0 +1,28 @@
+{
+  "name": "solarxr-protocol",
+  "version": "0.0.0",
+  "description": "Serialization Protocol for SlimeVR",
+  "main": "./protocol/typescript/dist/all_generated.js",
+  "types": "./protocol/typescript/dist/all_generated.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SlimeVR/SolarXR-Protocol.git"
+  },
+  "author": "",
+  "license": "(MIT OR Apache-2.0)",
+  "bugs": {
+    "url": "https://github.com/SlimeVR/SolarXR-Protocol/issues"
+  },
+  "homepage": "https://github.com/SlimeVR/SolarXR-Protocol#readme",
+  "devDependencies": {
+    "@mgit-at/typescript-flatbuffers-codegen": "^0.1.3",
+    "typescript": "4.8.4"
+  },
+  "dependencies": {
+    "flatbuffers": "^22.10.26"
+  }
+}

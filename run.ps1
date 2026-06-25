@@ -14,7 +14,7 @@
 # /Run.ps1 (Out of the repo, under parent directory)
 # ------------VISUAL EXPLINATION------------
 #
-# -------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------
 # Runs VoidReality: reinstalls workspace deps if missing, recompiles and rebuilds the server
 # jar, restarts it onto the fresh build, then starts the GUI in dev mode. Works from a freshly
 # cleaned tree. Pass -NoServer to run only the GUI.
@@ -23,8 +23,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$serverRoot = Join-Path $PSScriptRoot "VoidReality-Server-main"
-$jar = Join-Path $serverRoot "server\desktop\build\libs\VoidReality.jar"
+$serverRoot = Join-Path $PSScriptRoot "SlimeVR-Server-main"
+$jar = Join-Path $serverRoot "server\desktop\build\libs\slimevr.jar"
 
 # same JDK lookup as build.ps1
 function Find-Jdk {

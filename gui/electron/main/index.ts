@@ -50,6 +50,18 @@ if (process.platform === 'linux') {
 app.setPath('userData', getGuiDataFolder());
 app.setPath('sessionData', join(getGuiDataFolder(), 'electron'));
 
+let isQuitting = false;
+
+process.on('unhandledRejection', (reason) => {
+  logger.error({ reason }, 'Unhandled promise rejection');
+  if (!isQuitting) {
+    dialog.showErrorBox(
+      'Unhandled error',
+      'An unexpected error occurred during startup. Please check the logs for details.'
+    );
+  }
+});
+
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'app',
@@ -380,6 +392,7 @@ const checkEnvironmentVariables = () => {
   const set = to_check.filter((env) => !!process.env[env]);
   if (set.length > 0) {
     dialog.showErrorBox(
+      'Environment variables detected',
       `You have environment variables ${set.join(', ')} set, which may cause the VoidReality server to fail to launch properly.`
     );
     app.quit();
@@ -405,9 +418,22 @@ const spawnServer = async () => {
   const sharedDir = dirname(serverJar);
   const javaBin = await findSystemJRE(sharedDir);
   if (!javaBin) {
-    dialog.showErrorBox(
-      `Couldn't find a compatible Java version, please download Java 17 or higher`
-    );
+    try {
+      const res = await dialog.showMessageBox({
+        type: 'error',
+        buttons: ['Download Java 17', 'OK'],
+        defaultId: 0,
+        cancelId: 1,
+        title: 'Java not found',
+        message: `Couldn't find a compatible Java version`,
+        detail: 'VoidReality requires Java 17 or higher. Click Download to open the Java 17 download page.',
+      });
+      if (res.response === 0) {
+        await open('https://adoptium.net/?variant=openjdk17');
+      }
+    } catch (e) {
+      dialog.showErrorBox('Java not found', "Couldn't find a compatible Java version, please download Java 17 or higher");
+    }
     app.quit();
     return;
   }
@@ -474,8 +500,6 @@ const createFolders = async () => {
   await mkdir(getGuiDataFolder(), { recursive: true });
 };
 
-let isQuitting = false;
-
 app.whenReady().then(async () => {
   protocol.handle('app', (request) => {
     const { pathname } = new URL(request.url);
@@ -488,7 +512,8 @@ app.whenReady().then(async () => {
   } catch (err) {
     logger.error(err, 'Failed to initialize stores');
     dialog.showErrorBox(
-      'Failed to initialize application storage. Please make sure the application has write permissions to its data folder.'
+      'Failed to initialize application storage',
+      'Please make sure the application has write permissions to its data folder.'
     );
     app.quit();
     return;
@@ -496,7 +521,15 @@ app.whenReady().then(async () => {
 
   stores = await initStores();
   checkEnvironmentVariables();
-  const server = await spawnServer();
+  const server = await spawnServer().catch((err) => {
+    logger.error({ err }, 'Failed to spawn server');
+    dialog.showErrorBox(
+      'Server launch failed',
+      'Failed to start the server process. See logs for details.'
+    );
+    app.quit();
+    return undefined;
+  });
 
   createWindow();
 

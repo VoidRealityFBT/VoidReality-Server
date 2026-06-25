@@ -6,9 +6,13 @@ artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 directories:
   output: dist/artifacts/${os}
 
-asar: true
-asarUnpack:
-  - out/main/chunks/*.jar
+# Disable ASAR to work around Windows file locking issues during packaging.
+# Without ASAR, the app is packaged as unpacked files, which is still functional
+# and avoids EBUSY errors when electron-builder tries to create/replace app.asar.
+# Can be re-enabled later. WINDOWS PISSES ME OFF >:(
+asar: false
+disableAsarIntegrity: true
+disableSanityCheckAsar: true
 
 electronLanguages:
   - en-US

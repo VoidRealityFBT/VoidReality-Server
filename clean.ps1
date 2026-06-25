@@ -14,11 +14,15 @@
 # /Run.ps1 (Out of the repo, under parent directory)
 # ------------VISUAL EXPLINATION------------
 #
-# ------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------
+# Cleans generated build output and dependencies from both VoidReality repos so the trees
+# are small and ready for distrobution.
+# This removes node_modules, gradle and PlatformIO caches, build folders, and the Release
+# folders, so the next build will reinstall dependencies and take longer.
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
-$serverRoot = Join-Path $root "VoidReality-Server-main"
-$trackerRoot = Join-Path $root "VoidReality-Tracker-ESP-main"
+$serverRoot = Join-Path $root "SlimeVR-Server-main"
+$trackerRoot = Join-Path $root "SlimeVR-Tracker-ESP-main"
 
 [long]$totalFreed = 0
 
