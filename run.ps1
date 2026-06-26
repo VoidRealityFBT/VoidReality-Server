@@ -23,7 +23,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$serverRoot = Join-Path $PSScriptRoot "SlimeVR-Server-main"
+$serverRoot = Join-Path $PSScriptRoot "VoidReality-Server"
 $jar = Join-Path $serverRoot "server\desktop\build\libs\slimevr.jar"
 
 # same JDK lookup as build.ps1
