@@ -123,7 +123,7 @@ Stay Aligned's centering treated a horizontal leg's undefined heading as real an
 > Fixing bug before publishing a stable release.\
 > Currently VoidReality-server is being tested by peers.
 
-> You can use this by executing `./run` in powershell
+> You can use this by executing `powershell -ExecutionPolicy Bypass -File .\run.ps1` in powershell
 
 **Use the provided build scripts!**
 ```
