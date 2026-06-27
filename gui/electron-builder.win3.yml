@@ -33,7 +33,7 @@ linux:
     - target: deb
     - target: rpm
   extraFiles:
-    - from: "../server/desktop/build/libs/slimevr.jar"
+    - from: "../server/desktop/build/libs/voidreality.jar"
       to: "."
     - from: "../bindings-provider/build/linux-${arch}/slimevr-bindings-provider"
       to: "."
@@ -58,7 +58,7 @@ win:
   target: zip
   icon: "./electron/resources/icons/icon.ico"
   extraFiles:
-    - from: "../server/desktop/build/libs/slimevr.jar"
+    - from: "../server/desktop/build/libs/voidreality.jar"
       to: "."
     - from: "../server/core/resources"
       to: "."
@@ -74,5 +74,5 @@ mac:
   x64ArchFiles: "**/register-protocol-handler.node"
   icon: "./electron/resources/icons/icon.icns"
   extraFiles:
-    - from: "../server/desktop/build/libs/slimevr.jar"
-      to: "Resources/slimevr.jar"
+    - from: "../server/desktop/build/libs/voidreality.jar"
+      to: "Resources/voidreality.jar"

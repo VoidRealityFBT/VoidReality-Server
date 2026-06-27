@@ -60,6 +60,11 @@ export interface IElectronAPI {
   setPresence: (options: DiscordPresence) => void;
   getInstallDir: () => Promise<string>;
   isSteam: () => Promise<boolean>;
+  wifiCreds: {
+    get: () => Promise<{ ssid: string; password: string } | null>;
+    set: (value: { ssid: string; password: string }) => Promise<boolean>;
+    clear: () => Promise<boolean>;
+  };
 }
 
 declare global {

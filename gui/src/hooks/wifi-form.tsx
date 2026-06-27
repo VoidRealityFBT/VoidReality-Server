@@ -23,11 +23,31 @@ export function useWifiForm() {
         ssid: state.wifi.ssid,
         password: state.wifi.password,
       });
+      return;
     }
+    
+    let active = true;
+    window.electronAPI?.wifiCreds
+      ?.get()
+      .then((stored) => {
+        if (active && stored?.ssid) {
+          reset({ ssid: stored.ssid, password: stored.password });
+          setWifiCredentials(stored.ssid, stored.password);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   const submitWifiCreds = (value: WifiFormData) => {
-    setWifiCredentials(value.ssid, value.password ?? '');
+    const password = value.password ?? '';
+    setWifiCredentials(value.ssid, password);
+    // Remember the network so connecting the next tracker does not prompt for it again.
+    window.electronAPI?.wifiCreds
+      ?.set({ ssid: value.ssid, password })
+      .catch(() => {});
     navigate('/onboarding/connect-trackers', {
       state: { alonePage: state.alonePage },
     });

@@ -21,7 +21,13 @@ export const IPC_CHANNELS = {
   GH_FETCH: 'gh-fetch',
   DISCORD_PRESENCE: 'discord-presence',
   IS_STEAM: 'is-steam',
+  WIFI_CREDS: 'wifi-creds',
 } as const;
+
+export interface WifiCreds {
+  ssid: string;
+  password: string;
+}
 
 export interface IpcInvokeMap {
   [IPC_CHANNELS.OPEN_URL]: (url: string) => void;
@@ -50,4 +56,8 @@ export interface IpcInvokeMap {
   ) => Promise<GHReturn[T['type']]>;
   [IPC_CHANNELS.DISCORD_PRESENCE]: (options: DiscordPresence) => void;
   [IPC_CHANNELS.IS_STEAM]: () => boolean;
+  [IPC_CHANNELS.WIFI_CREDS]: (args: {
+    method: 'get' | 'set' | 'clear';
+    value?: WifiCreds;
+  }) => Promise<WifiCreds | boolean | null>;
 }

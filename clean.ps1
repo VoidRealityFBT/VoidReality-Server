@@ -20,9 +20,24 @@
 # This removes node_modules, gradle and PlatformIO caches, build folders, and the Release
 # folders, so the next build will reinstall dependencies and take longer.
 $ErrorActionPreference = "Stop"
-$root = $PSScriptRoot
-$serverRoot = Join-Path $root "SlimeVR-Server-main"
-$trackerRoot = Join-Path $root "SlimeVR-Tracker-ESP-main"
+
+# Locate the repos whether this script is in the parent folder next to them or still inside one
+# of them, and whether the folders kept DitHub's "-main" suffix or not, so a fresh clone just works.
+function Resolve-RepoRoot($base, $marker) {
+    foreach ($n in @($base, "$base-main")) {
+        $p = Join-Path $PSScriptRoot $n
+        if (Test-Path (Join-Path $p $marker)) { return $p }
+    }
+    if (Test-Path (Join-Path $PSScriptRoot $marker)) { return $PSScriptRoot }
+    $parent = Split-Path $PSScriptRoot -Parent
+    foreach ($n in @($base, "$base-main")) {
+        $p = Join-Path $parent $n
+        if (Test-Path (Join-Path $p $marker)) { return $p }
+    }
+    return (Join-Path $PSScriptRoot $base)
+}
+$serverRoot = Resolve-RepoRoot "VoidReality-Server" "server"
+$trackerRoot = Resolve-RepoRoot "VoidReality-Tracker-ESP" "platformio.ini"
 
 [long]$totalFreed = 0
 

@@ -22,7 +22,7 @@
 #           get the app jar. Use the 'firmware' target if you need a hard failure on problems.
 #   dist  - the distributable executable: builds the server jar, the SteamVR bindings provider,
 #           and the GUI, then packages them with electron-builder into a downloadable app
-#           (a zip on Windows) and copies it to SlimeVR-Server-main\Release. 
+#           (a zip on Windows) and copies it to the server repo's Release folder.
 #           Needs CMake and Visual Studio C++ build tools for the native bindings provider.
 #   bindings - just the SteamVR bindings provider (the native bridge), via CMake.
 # Firmware auto-detects the boards you own from the server config (the trackers that have
@@ -38,8 +38,29 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$serverRoot = Join-Path $PSScriptRoot "SlimeVR-Server-main"
-$trackerRoot = Join-Path $PSScriptRoot "SlimeVR-Tracker-ESP-main"
+
+# Locate the server and firmware repo folders robustly: whether this script sits in the parent
+# folder next to them (the recommended layout) or still inside one of the repos, and whether the
+# folders kept DitHub's "-main" suffix from a downloaded zip or not. So a fresh clone just works
+# without renaming anything
+function Resolve-RepoRoot($base, $marker) {
+    # script in the parent: the repo is a sibling folder
+    foreach ($n in @($base, "$base-main")) {
+        $p = Join-Path $PSScriptRoot $n
+        if (Test-Path (Join-Path $p $marker)) { return $p }
+    }
+    # script still inside this repo: this folder is the repo root
+    if (Test-Path (Join-Path $PSScriptRoot $marker)) { return $PSScriptRoot }
+    # script inside the other repo: this repo is a sibling of the script's parent
+    $parent = Split-Path $PSScriptRoot -Parent
+    foreach ($n in @($base, "$base-main")) {
+        $p = Join-Path $parent $n
+        if (Test-Path (Join-Path $p $marker)) { return $p }
+    }
+    return (Join-Path $PSScriptRoot $base)
+}
+$serverRoot = Resolve-RepoRoot "VoidReality-Server" "server"
+$trackerRoot = Resolve-RepoRoot "VoidReality-Tracker-ESP" "platformio.ini"
 
 function Save-ToRelease($repoRoot, $sourceFile, $releaseName) {
     $releaseDir = Join-Path $repoRoot "Release"
@@ -284,10 +305,10 @@ function Build-Server {
         & .\gradlew.bat ":server:desktop:shadowJar"
         if ($LASTEXITCODE -ne 0) { throw "Server build failed" }
     } finally { Pop-Location }
-    $jar = Join-Path $serverRoot "server\desktop\build\libs\slimevr.jar"
+    $jar = Join-Path $serverRoot "server\desktop\build\libs\voidreality.jar"
     if (-not (Test-Path $jar)) { throw "Build finished but $jar is missing" }
     Write-Host "Server jar built to $jar"
-    Save-ToRelease $serverRoot $jar "slimevr.jar"
+    Save-ToRelease $serverRoot $jar "voidreality.jar"
 }
 
 # Builds the native SteamVR bindings provider with CMake. electron-builder expects the binary
@@ -391,11 +412,26 @@ function Build-Dist {
     }
     
     Write-Host "Building the GUI bundle and packaging the executable"
+    # Free the Gradle daemons memory before the memory heavy renderer build, and give node a
+    # bigger heap.
+    try { & (Join-Path $serverRoot "gradlew.bat") --stop *> $null } catch { }
+    $env:NODE_OPTIONS = "--max-old-space-size=4096"
     Push-Location $guiRoot
     try {
-        pnpm run build
-        if ($LASTEXITCODE -ne 0) { throw "GUI bundle build failed" }
-        
+        $maxBuild = 3
+        $b = 0
+        while ($b -lt $maxBuild) {
+            pnpm run build
+            if ($LASTEXITCODE -eq 0) { break }
+            $b++
+            if ($b -lt $maxBuild) {
+                Write-Warning "GUI bundle build failed (attempt $b); freeing memory and retrying in 5 seconds..."
+                Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+                Start-Sleep -Seconds 5
+            }
+        }
+        if ($LASTEXITCODE -ne 0) { throw "GUI bundle build failed after $maxBuild attempts" }
+
         # Retry packaging up to 3 times if EBUSY occurs (file lock released after delay)
         $maxRetries = 3
         $retry = 0
@@ -415,7 +451,11 @@ function Build-Dist {
     # server Release folder.
     $artifacts = Join-Path $guiRoot "dist\artifacts"
     if (-not (Test-Path $artifacts)) { throw "Packaging finished but $artifacts is missing" }
-    $built = Get-ChildItem -Path $artifacts -Recurse -File -Include *.zip, *.exe, *.AppImage, *.deb, *.rpm, *.dmg -ErrorAction SilentlyContinue
+    # Only the final packaged artifacts (the zip or an installer) live directly under
+    # dist\artifacts\<os>. Skip the *-unpacked folders, which hold the loose intermediate exes
+    # that are already inside the zip, so /Release does not fill up with redundant 200 MB copies.
+    $built = Get-ChildItem -Path $artifacts -Recurse -File -Include *.zip, *.exe, *.AppImage, *.deb, *.rpm, *.dmg -ErrorAction SilentlyContinue |
+        Where-Object { $_.DirectoryName -notmatch 'unpacked' }
     if (-not $built) { throw "No packaged executable found under $artifacts" }
     foreach ($a in $built) { Save-ToRelease $serverRoot $a.FullName $a.Name }
     Write-Host "Distributable executable(s) ready in $serverRoot\Release"
@@ -450,7 +490,7 @@ function Get-PioEnvs {
 
 # Reads the deviceBoardTypes map the server records for each connected tracker, and returns the
 # board envs the user actually owns AND that this firmware can build. Empty if the config has
-# none (e.g. server not yet run with this feature, or no tracker has connected). Owned boards
+# none (server not yet run with this feature, or no tracker has connected). Owned boards
 # that have no buildable env are reported and skipped so one unsupported board does not abort
 # the build for the boards that are supported.
 function Get-DetectedBoardEnvs {
@@ -592,5 +632,3 @@ switch ($Target) {
     }
     "clean" { Clean-Builds }
 }
-
-# (This took 8 hours to make. BUT THE DAMN VoidReality EXECUTABLE CANT FIND JAVA EVEN THOUGH IM LEGIT SAYING "It's right here". See gui\electron-builder.yml to know what im talking about.)

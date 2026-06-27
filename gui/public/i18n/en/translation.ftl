@@ -909,6 +909,19 @@ settings-osc-common-network-port_banned_error = The port { $port } can't be used
 
 settings-network = Network
 settings-network-description = Live 2.4 GHz networking status for your trackers (Signal is their WiFi RSSI), a per-tracker lag/health readout, and a log of when each tracker disconnected or reconnected and why.
+settings-network-wifi = Saved WiFi
+settings-network-wifi-description = The network your trackers join. It is saved securely on this PC so you only enter it once. Update it here if you switch networks or change your password.
+settings-network-wifi-ssid =
+    .label = Network name (SSID)
+    .placeholder = Your WiFi name
+settings-network-wifi-password =
+    .label = Password
+    .placeholder = Your WiFi password
+settings-network-wifi-save = Save
+settings-network-wifi-forget = Forget
+settings-network-wifi-close = Close
+settings-network-wifi-saved = Saved securely.
+settings-network-wifi-cleared = Forgotten.
 settings-network-summary-connected = Connected
 settings-network-summary-lagging = Lagging
 settings-network-summary-avg_ping = Average ping
@@ -975,6 +988,9 @@ settings-utils-advanced-open_data-label = Open folder
 settings-utils-advanced-open_logs = Logs folder
 settings-utils-advanced-open_logs-description = Open VoidReality's logs folder in file explorer, containing the logs of the app
 settings-utils-advanced-open_logs-label = Open folder
+settings-utils-advanced-network = Network
+settings-utils-advanced-network-description = Set the WiFi network your trackers join. Its saved securely on this PC so you only enter it once.
+settings-utils-advanced-network-label = Configure Network
 
 ## Home Screen
 settings-home-list-layout = Trackers list layout
@@ -1057,6 +1073,7 @@ onboarding-wifi_creds-ssid-required = Wi-Fi name is required
 onboarding-wifi_creds-password =
     .label = Password
     .placeholder = Enter password
+onboarding-wifi_creds-stored_safely = Your network name and password are saved securely on this PC, so this is a one time setup and the next tracker will not ask again. You can change or remove them later in Settings/Advanced/Configure Network.
 
 onboarding-wifi_creds-dongle-title = Trackers using a dongle
 onboarding-wifi_creds-dongle-description =

@@ -67,11 +67,11 @@ fun main(args: Array<String>) {
 	val cmd: CommandLine = try {
 		parser.parse(options, args, true)
 	} catch (e: org.apache.commons.cli.ParseException) {
-		formatter.printHelp("slimevr.jar", options)
+		formatter.printHelp("voidreality.jar", options)
 		exitProcess(1)
 	}
 	if (cmd.hasOption("help")) {
-		formatter.printHelp("slimevr.jar", options)
+		formatter.printHelp("voidreality.jar", options)
 		exitProcess(0)
 	}
 	if (cmd.hasOption("version")) {

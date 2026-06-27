@@ -8,6 +8,7 @@ import {
 import { BugIcon } from '@/components/commons/icon/BugIcon';
 import { Button } from '@/components/commons/Button';
 import { SettingsResetModal } from '@/components/settings/SettingsResetModal';
+import { WifiCredentialsModal } from '@/components/settings/WifiCredentialsSettings';
 
 import { error } from '@/utils/logging';
 import { defaultConfig as defaultGUIConfig, useConfig } from '@/hooks/config';
@@ -34,6 +35,7 @@ export function AdvancedSettings() {
   const [showWarningGUI, setShowWarningGUI] = useState(false);
   const [showWarningServer, setShowWarningServer] = useState(false);
   const [showWarningAll, setShowWarningAll] = useState(false);
+  const [showNetwork, setShowNetwork] = useState(false);
   const { sendRPCPacket } = useWebsocketAPI();
 
   const openConfigFolder = async () => {
@@ -170,6 +172,34 @@ export function AdvancedSettings() {
               </div>
               {electron.isElectron && (
                 <>
+                  <div className="sm:grid sm:grid-cols-[1.75fr,_1fr] items-center">
+                    <div>
+                      <Typography variant="section-title">
+                        {l10n.getString('settings-utils-advanced-network')}
+                      </Typography>
+                      <div className="flex flex-col">
+                        <Typography>
+                          {l10n.getString(
+                            'settings-utils-advanced-network-description'
+                          )}
+                        </Typography>
+                      </div>
+                    </div>
+                    <div className="flex flex-col nsm:pt-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => setShowNetwork(true)}
+                      >
+                        {l10n.getString(
+                          'settings-utils-advanced-network-label'
+                        )}
+                      </Button>
+                      <WifiCredentialsModal
+                        isOpen={showNetwork}
+                        onClose={() => setShowNetwork(false)}
+                      />
+                    </div>
+                  </div>
                   <div className="sm:grid sm:grid-cols-[1.75fr,_1fr] items-center">
                     <div>
                       <Typography variant="section-title">

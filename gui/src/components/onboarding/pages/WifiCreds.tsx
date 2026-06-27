@@ -80,6 +80,12 @@ export function WifiCredsPage() {
                   variant="secondary"
                 />
               </Localized>
+              <Typography
+                variant="standard"
+                color="secondary"
+                whitespace="whitespace-pre-line"
+                id="onboarding-wifi_creds-stored_safely"
+              />
               <div className="flex flex-row gap-3 justify-between">
                 {!state.alonePage ? (
                   <Button

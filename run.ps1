@@ -23,8 +23,19 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$serverRoot = Join-Path $PSScriptRoot "VoidReality-Server"
-$jar = Join-Path $serverRoot "server\desktop\build\libs\slimevr.jar"
+
+# Locate the server repo whether this script is in the parent folder next to it or still inside
+# it, and whether the folder kept DihHub's "-main" suffix or not, so a fresh clone just works.
+function Resolve-ServerRoot {
+    foreach ($n in @("VoidReality-Server", "VoidReality-Server-main")) {
+        $p = Join-Path $PSScriptRoot $n
+        if (Test-Path (Join-Path $p "server")) { return $p }
+    }
+    if (Test-Path (Join-Path $PSScriptRoot "server")) { return $PSScriptRoot }
+    return (Join-Path $PSScriptRoot "VoidReality-Server")
+}
+$serverRoot = Resolve-ServerRoot
+$jar = Join-Path $serverRoot "server\desktop\build\libs\voidreality.jar"
 
 # same JDK lookup as build.ps1
 function Find-Jdk {

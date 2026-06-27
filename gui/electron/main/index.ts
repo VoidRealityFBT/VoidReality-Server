@@ -29,6 +29,7 @@ import {
 } from './paths';
 import { initStores } from './store';
 import { closeLogger, logger } from './logger';
+import { clearWifiCreds, getWifiCreds, setWifiCreds } from './wifi-creds';
 
 import { spawn } from 'node:child_process';
 import { discordPresence } from './presence';
@@ -167,6 +168,17 @@ handleIpc(IPC_CHANNELS.STORAGE, async (e, { type, method, key, value }) => {
       return store.delete(key!);
     case 'save':
       return store.save();
+  }
+});
+
+handleIpc(IPC_CHANNELS.WIFI_CREDS, async (e, { method, value }) => {
+  switch (method) {
+    case 'get':
+      return getWifiCreds();
+    case 'set':
+      return setWifiCreds(value!);
+    case 'clear':
+      return clearWifiCreds();
   }
 });
 
@@ -426,13 +438,17 @@ const spawnServer = async () => {
         cancelId: 1,
         title: 'Java not found',
         message: `Couldn't find a compatible Java version`,
-        detail: 'VoidReality requires Java 17 or higher. Click Download to open the Java 17 download page.',
+        detail:
+          'VoidReality requires Java 17 or higher. Click Download to open the Java 17 download page.',
       });
       if (res.response === 0) {
         await open('https://adoptium.net/?variant=openjdk17');
       }
     } catch (e) {
-      dialog.showErrorBox('Java not found', "Couldn't find a compatible Java version, please download Java 17 or higher");
+      dialog.showErrorBox(
+        'Java not found',
+        "Couldn't find a compatible Java version, please download Java 17 or higher"
+      );
     }
     app.quit();
     return;

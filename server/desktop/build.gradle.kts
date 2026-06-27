@@ -76,7 +76,7 @@ tasks.shadowJar {
 
 		exclude(project(":solarxr-protocol"))
 	}
-	archiveBaseName.set("slimevr")
+	archiveBaseName.set("voidreality")
 	archiveClassifier.set("")
 	archiveVersion.set("")
 }

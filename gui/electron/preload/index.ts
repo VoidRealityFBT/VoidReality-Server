@@ -48,4 +48,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setPresence: (options) => ipcRenderer.invoke(IPC_CHANNELS.DISCORD_PRESENCE, options),
   getInstallDir: () => ipcRenderer.invoke(IPC_CHANNELS.GET_FOLDER, 'exe'),
   isSteam: () => ipcRenderer.invoke(IPC_CHANNELS.IS_STEAM),
+  wifiCreds: {
+    get: () => ipcRenderer.invoke(IPC_CHANNELS.WIFI_CREDS, { method: 'get' }),
+    set: (value) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WIFI_CREDS, { method: 'set', value }),
+    clear: () => ipcRenderer.invoke(IPC_CHANNELS.WIFI_CREDS, { method: 'clear' }),
+  },
 } satisfies IElectronAPI);
