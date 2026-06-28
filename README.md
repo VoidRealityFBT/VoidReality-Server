@@ -4,25 +4,33 @@ This is the server and desktop interface half of VoidReality. It is an edited an
 
 This is not the SlimeVR project. It is an branch/edit of it. The original server is the work of Eiren Rain and the SlimeVR contributors, under the MIT and Apache 2.0 licenses kept in this directory. It is subject to change. See the disclaimer at the bottom.
 
-
-## Layout
-
-The build is a Gradle multi project plus a pnpm workspace.
-
-- `server/core` is the Kotlin tracking core: trackers, the skeleton, resets, Stay Aligned, the rotation filters, OSC and VMC output. This is where the tracking actually happens.
-- `server/desktop` wraps the core into the runnable jar and the SteamVR bridge. `build.ps1 server` produces `server/desktop/build/libs/slimevr.jar`.
-- `gui` is the Electron and React interface. It talks to the server over a local websocket on port 21110 and never does tracking itself, only display and settings.
-- `solarxr-protocol` is the flatbuffers schema shared by server and GUI. Changing a setting that crosses the wire means editing `schema/rpc.fbs`, regenerating the bindings, and rebuilding the protocol's TypeScript dist that the GUI imports.
-
-The server and GUI are separate processes. If you only changed GUI code you can rerun the GUI alone; if you changed server code you have to rebuild the jar, because the running jar is what tracks.
-
-
 ## Why VoidReality differs from the base server
 
 The base SlimeVR server is built to work acceptably for everyone, across every board, room, and body, with safe general defaults. VoidReality is built for one goal: less yaw drift, fewer recalibrations, and a body that stays where it should. That difference in aim is the reason for most of the changes below.
 
 Where the base server picks a default that is safe on average, VoidReality measures the specific trackers in front of it and adapts to them: correction strength follows each tracker's own measured drift instead of a fixed gain, smoothing follows the live packet rate and motion speed instead of a fixed amount, and the network page shows the real numbers for this link instead of assuming the link is fine. Where the base server has one behavior that is correct while upright but wrong while lying down, VoidReality detects the pose and changes behavior rather than applying the upright rule everywhere. And where the base server drops or hands off a tracker on a heuristic, VoidReality keeps a live tracker tracking and only falls back on genuine loss of data. None of this turns an IMU into a lighthouse, but it removes the cases where the base server made a fine tracker behave worse than it had to. The how and the why of each are below; the feature list and the specific defects fixed follow in the next two sections.
 
+## Installing VoidReality
+
+It is recommended that you use the custom VoidReality Intallation software provided here:\
+https://github.com/VoidRealityFBT/VoidReality-Installer
+
+## Building and running yourself
+
+```
+`build.ps1 server` // builds the server jar
+`build.ps1 gui`    // builds the graphical user interface
+`build.ps1 app`    // builds both
+`build.ps1 all`    // builds those plus the firmware.
+```
+The Kotlin server needs a JDK 17 or newer, since it cannot build on Java 8; the script finds one automatically.\
+The interface needs Node with pnpm 10.33.
+
+* `build.ps1 dist` builds the distributable executable for distribution.\
+The jar, the native SteamVR bridge under `bindings-provider`, and the interface, packaged with electron-builder into a downloadable app and copied into `Release`. That needs CMake, the Visual Studio C++ build tools, and the OpenVR SDK populated at `bindings-provider\openvr` (an empty submodule in a fresh tree, so `git clone https://github.com/ValveSoftware/openvr bindings-provider\openvr` once first).
+
+* `run.ps1` reinstalls dependencies if needed, recompiles and rebuilds the jar, restarts the server onto the fresh build, and opens the interface in development mode, so it always runs the latest code and works straight from a freshly cleaned tree.\
+* `clean.ps1` does the deep clean (removes `node_modules`, the gradle cache, all build output, and the `Release` folders) to get the tree smaller.
 
 ## How the tracking works
 
@@ -102,37 +110,6 @@ Body yaw is taken from the spine when a spine tracker is present, while the head
 **Simulated toes**:\
 When sending a full skeleton over VMC, simulated toe bones are produced from the foot angle so avatars with toe bones get a little articulation.\
 (Why did I add this.)
-
-
-## Bug fixes
-
-Defects in the base behavior that this build corrects, separate from the features above.
-
-**Drift Compensation did nothing**:\
-The toggle existed in the interface and config, but the value was hardwired off in the path that applies it, so turning it on had no effect. It is now wired to the setting. Drift Compensation and Stay Aligned both correct yaw and are not meant to run together; pick one.
-
-**Drift based handoff snapped limbs into a standing pose**:\
-The base server handed a body part to its fallback estimate once its tracker had drifted past an angle threshold, which made a live but drifted tracker, or one held horizontal such as a leg while lying down, jump its limb into a default standing pose even though the tracker was fine and still reporting. That drift keyed handoff was removed; fallback now engages only when a tracker actually stops sending data.
-
-**Lying down centering crossed the legs**:\
-Stay Aligned's centering treated a horizontal leg's undefined heading as real and pulled it toward an upright pose, twisting resting legs into crossed shapes. Centering is now paused whenever the pose is not clearly upright.
-
-## Building and running
-
-**Use the provided build scripts!**
-```
-`build.ps1 server` // builds the server jar
-`build.ps1 gui`    // builds the graphical user interface
-`build.ps1 app`    // builds both
-`build.ps1 all`    // builds those plus the firmware.
-```
-The Kotlin server needs a JDK 17 or newer, since it cannot build on Java 8; the script finds one automatically.\
-The interface needs Node with pnpm 10.33.
-
-`build.ps1 dist` builds the distributable executable for distribution: the jar, the native SteamVR bridge under `bindings-provider`, and the interface, packaged with electron-builder into a downloadable app and copied into `Release`. That needs CMake, the Visual Studio C++ build tools, and the OpenVR SDK populated at `bindings-provider\openvr` (an empty submodule in a fresh tree, so `git clone https://github.com/ValveSoftware/openvr bindings-provider\openvr` once first).
-
-`run.ps1` reinstalls dependencies if needed, recompiles and rebuilds the jar, restarts the server onto the fresh build, and opens the interface in development mode, so it always runs the latest code and works straight from a freshly cleaned tree.\
-`clean.ps1` does the deep clean (removes `node_modules`, the gradle cache, all build output, and the `Release` folders) to get the tree small for a GitHub upload.
 
 ## Disclaimer
 
